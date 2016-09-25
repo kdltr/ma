@@ -1,0 +1,59 @@
+#!/usr/bin/env wish
+#
+# evaluate code in MA-context
+
+
+fconfigure stdout -translation lf
+fconfigure stderr -translation lf
+
+set exec_prefix ""
+
+if {[info exists env(HERE)]} {
+    set exec_prefix $env(HERE)/exec/
+}
+
+set async ""
+set eot_symbol "␄"
+
+
+proc Usage {{code 1}} {
+    puts stderr {usage: ma-eval [-h] [-async] [ID] [EXP ...]}
+    exit $code
+}
+
+
+set exp [lassign $argv id]
+
+if {$id == "-h"} Usage
+
+if {$id == "-async"} {
+    set exp [lassign $exp id]
+    set async "-async"
+}
+
+if {$id == ""} {
+    set dir [pwd]
+    set dname "$dir/+Errors"
+
+    if {[catch [list send $dname #]]} {
+        exec ${exec_prefix}ma -name $dname -noscroll -tag \
+            "$dir/+Errors new Del Cut Paste Snarf Send Look Font Scroll | " &
+        after 500
+    }
+
+    set data [read stdin]
+    send $dname Append "{$data}"
+    send -async $dname AppendLine $eot_symbol
+    exit
+}
+
+if {$exp == ""} {set exp [read stdin]}
+
+if {[catch [eval send $async $id $exp] result]} {
+    exit 1
+}
+
+if {$async != ""} exit
+
+puts $result
+exit

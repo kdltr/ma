@@ -1,0 +1,9 @@
+#!/bin/bash
+
+execp=
+
+if test -n "$HERE"; then
+    execp=$HERE/exec/
+fi
+
+TERM=dumb exec ${execp}ma -- -win "$@"

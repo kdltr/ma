@@ -1,0 +1,25 @@
+#!/usr/bin/env tclsh
+#
+# open one or more files with "ma", or locate already open instance
+
+
+set exec_prefix ""
+
+if {[info exists env(HERE)]} {
+    set exec_prefix $env(HERE)/exec/
+}
+
+if {$argc == 0} {
+    puts stderr "usage: B FILENAME[:ADDR] ..."
+    exit 1
+}
+
+foreach x $argv {
+    if {[regexp {^([^:]+):(.+)$} $x _ fname addr]} {
+        set fname [file normalize $fname]
+        exec ${exec_prefix}ma-eval MA-registry FindFile $fname $addr &
+    } else {
+        set fname [file normalize $x]
+        exec ${exec_prefix}ma-eval MA-registry FindFile $fname &
+    }
+}

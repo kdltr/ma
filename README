@@ -1,0 +1,172 @@
+
+  "ma"
+  ~~~~
+
+Ma is a minimalistic clone of the acme[1] editor used in Plan 9, and is written 
+in Tcl/Tk. It has been tested on with Tcl/Tk 8.5, mostly under Linux. Ma has 
+successfully been run on Mac OS X with XQuartz, but needs a tiling window 
+manager to be used in a halfway satisfactory way. 
+
+I used emacs[2] for years, but got bored with the ever growing number of 
+extensions and key-combinations that one accumulates when intensively using
+that editor. I also got fed up with the fact that purely keyboard driven 
+interfaces involve frantic typing, something that appears to stress me. Acme, 
+which is heavily mouse-controlled, seems to produce a more relaxed, 
+single-handed use, especially for navigation and browsing. I'm much slower now 
+(or at least this is my impression), but less hectic while working (it seems).
+
+Another advantage of acme is the dynamic nature of extending the user-interface 
+while one is using it - nearly everything is text, and nearly every text can be 
+mouse-sensitive. 
+
+Note that this editor is single-window based - it doesn't provide multiple 
+windows, nor does it manage them in any way (this is delegated to the window 
+manager.) 
+
+Installation:
+
+Invoke "build" and put the files "ma", "ma-eval", "mwd", "win", "pty" and "B" in your PATH.
+
+Usage:
+
+"ma" works basically like Acme, but does no own window-management. 
+Configuration is done by a file "~/.ma", holding Tcl code to modify fonts, colors, etc.
+A number of command-line options can be provided to set various of these
+options and to run "ma" in special modes, or comunicate with the "registry",
+a "ma" instance that allows locating files that are already open.
+
+To start the registry, run
+
+  ma -registry &
+
+The registry is implemented by the Tk "send" command, so X-forwarding must be
+disabled (enter "xhost" to see wether this is the case). "ma" should still run, but
+features related to the registry will not be available in this case.
+
+"B" takes one ore more filenames (optionally followed by an address) and opens
+the given files or activates already open windows holding these files.
+
+"pty" is a generic program running a subprocess in a pseudo terminal and is
+used by "win" to have interactive windows inside a "ma" instance. Note that this
+is currently very crude and does not support escape codes of any kind.
+
+"ma-eval" can be used to evaluate Tcl code in a running "ma" instance, "mwd"
+sets the label of the window in which the command is executed (similarly to "awd"
+in the original Acme). You can create an alias for "cd" to set the label automatically:
+
+alias cd="_cd"
+
+function _cd () {
+    \cd "$@"
+    if test -n "$MA"; then
+        mwd bash
+    fi
+}
+
+When the registry is running, the window that has the current focus has a white border
+around it. Executing commands in the body of another window will then perform the
+execution in the context of the focus window. Execution in the tag of a window always
+has that window as context, regardless of focus.
+
+Ma is not finished, and probably never will. For more information, consult the 
+source code or contact me[3]. 
+
+
+To do:
+
+- (bug) document ma-eval + use of registry properly
+- (bug) acquisition of file from dir-view doesn't seem to add auto_post_eval
+  - the reason is that just setting the theme doesn't set auto_post_eval again
+- (bug) crash of program in win-mode doesn't print any message
+- (bug) KeyRelease-event in .tag (getting through after invoking dmenu(1) in this
+  case) results in incorrect resize of tag, even though only first line contains
+  text
+- (bug) sort order in columnar listing is wrong (should be rowwise, not columnwise)
+- (bug) Mac/X11: wrong arrow cursor (points right)
+- (bug) Delete key should send SIGINT instead of SIGKILL
+- (bug) Tk seems to clear the clipboard when exiting, so the contents copied from
+  a terminated instants are not recovered
+- (bug) the selection is sometimes retained even after input
+
+Possible extensions:
+
+- Detect "password:" in output (win mode) and temporarily use special
+  keyboard handler to display "*" instead (until non-graphical char or enter)
+- smoother flashing (use "winfo rgb" to obtain color components and fade out
+  color)
+- dumping window state (tag + body) to file, and restore, possibly
+  combined with auto-dumping, where ma in registry mode could restore
+  all auto-dumped files from a given directory.
+
+Shortcomings:
+
+- the file-registry needs to be explicitly started
+- Ctrl-C/Kill: is too coarse - we can't start background processes without
+  killing them on exit
+- width use for computing columnar layout seems not to be correct (always 80?)
+- autosnarf: no idea how to do this, keeping current selection and copying when
+  selection gets empty doesn't work, since selection by mouse apparently clears
+  it in between movements
+  - perhaps detect when selection changes from non-empty to empty
+- there is no Zerox command
+- works very bad on Mac/Aqua and Windows:
+  - Mac: default Tcl/Tk crashes, freshly installed (Aqua) aborts unexpectedly, B2/B3 
+    are swapped, slow startup (Mac/X11 works surprisingly well, though)
+  - Windows: cursor in text widget barely visible (black, even on dark background),
+    startup very slow, binding Ctrl-keys doesn't seem to work, UpdateTag doesn't
+    seem to treat filename as valid and inserts Win-style path before it (this is 
+    with Active State Tcl/Tk, 8.6.4)
+- B1B2/B1B3 doesn't work when B1 was double-clicked
+- there is no backup-file
+- B2 in .sbar should respect current offset from mouse-pointer to top
+  of bar (currently scrolls so that top of bar is reference-point)
+- The move-box of a window is faked with a special unicode char
+- Address syntax only supports a subset of acme/sam as is rather crude (see also
+  comment in ParseAddr)
+
+Unclear:
+
+- we could implement Putall via registry, but is it wise, assuming modified windows
+  on other (virtual) screens exist?
+  - or could add command to list (in log-window) all dirty instances, by sending 
+    command to registry, which in turn asks all registered instances
+- use file-registry for locating +Errors windows, instead of custom appname?
+  (but that requires registry to be running)
+
+Differences to acme(1):
+
+- (obviously) single-window mode
+- no dynamic update of tagline (except filename)
+- auto-chmod when saving file beginning with "#!/"
+- missing commands: Zerox, Putall, Edit
+- supports Up/Down move by lines
+- B1B2B3 leaves file modified
+- inserting with active selection doesn't snarf
+- handles CRNL transparently (but destructively)
+- indentation-setting is window-local
+- executing with redirection in "win" mode invokes shell, and does not send
+  the command to the process running in the window
+- executing in tag always has current window as context, executing in body has
+  currently focussed window as context (if registry is running)
+- double-clicking opening bracket selects forward, but quote-scanning
+  only works backwards (in acme both bracket and quotes only select backwards)
+- indent-mode works differently
+- word under cursor is defined as ws-delimited
+- "project" files ("./.ma.p")
+- win-mode: pressing RETURN before current insert point sends the whole line
+- "noscroll" mode is much weaker and only available in "+Errors" + "win" windows
+- basic keyboard commands for mouse-less operation: 
+  - C-1 (toggle focus), C-2 (execute selection), C-3 (acquire selection)
+- B3-search is case-insensitive, search with "Look" is not
+- "//.../" address disables most regex syntax (used for ctags)
+
+Features found in wily[4], that might be useful:
+
+- Dotfiles: toggle display of dotfiles in dir listings (default off?)
+- .wilytools: add text to tag depending on opened file
+
+
+[1] http://acme.cat-v.org/
+[2] https://www.gnu.org/software/emacs/
+[3] felix@call-with-current-continuation.org
+[4] http://www.cs.yorku.ca/~oz/wily/
