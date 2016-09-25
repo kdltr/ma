@@ -50,7 +50,8 @@ set indent_mode 0
 set command_input_file ""
 set any_output 0
 set mailer "M"
-set browser "firefox"
+set browser "icecat"
+set image_viewer "sxiv"
 set b1_down 0
 set b2_down 0
 set b2_start ""
@@ -157,6 +158,10 @@ set plumbing_rules {
     }}
     {{^([^:]+):} { GotoFileAddress [file normalize [GetArg 1]] }}
     {{^(\S+)\((\d+)\)$} { InvokeExternalCommandInWindow "man [GetArg 2] [GetArg 1]" }}
+    {{^(.+)(.png|.jpg|.jpeg|.gif)} {
+        global image_viewer
+        exec $image_viewer [GetArg 0]
+    }}
 }
 
 
