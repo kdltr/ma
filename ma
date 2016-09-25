@@ -52,6 +52,7 @@ set any_output 0
 set mailer "M"
 set browser "icecat"
 set image_viewer "sxiv"
+set pdf_viewer "mupdf-x11"
 set b1_down 0
 set b2_down 0
 set b2_start ""
@@ -161,6 +162,10 @@ set plumbing_rules {
     {{^(.+)(.png|.jpg|.jpeg|.gif)} {
         global image_viewer
         exec $image_viewer [GetArg 0]
+    }}
+    {{^(.+).pdf} {
+        global pdf_viewer
+        exec $pdf_viewer [GetArg 0]
     }}
 }
 
