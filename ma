@@ -6,8 +6,8 @@
 
 set current_font_size 12
 set tag_font_size $current_font_size
-set current_fixed_font "Courier"
-set current_variable_font "Helvetica"
+set current_fixed_font "terminus"
+set current_variable_font "Liberation Sans"
 set current_font $current_variable_font
 set current_font_style normal
 set current_filename ""
