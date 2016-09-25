@@ -1,4 +1,4 @@
-#!/usr/bin/env tclsh
+#!/home/kooda/.guix-profile/bin/tclsh
 #
 # open one or more files with "ma", or locate already open instance
 

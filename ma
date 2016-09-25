@@ -1,4 +1,4 @@
-#!/usr/bin/env wish
+#!/home/kooda/.guix-profile/bin/wish8.6
 #### ma - a minimal variant of acme(1)
 #
 # (c)MMXV Felix L. Winkelmann
