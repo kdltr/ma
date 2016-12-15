@@ -1,0 +1,31 @@
+#!/usr/bin/env tclsh
+#
+# takes mail and quotes/unquotes body
+
+
+set mode quote
+set qchar ">"
+
+if {$argc > 0} {
+    set qchar [lindex $argv 0]
+}
+
+if {[regexp {unquote$} $argv0]} {
+    while {[gets stdin line] >= 0} {
+        if {[regexp {^>(\s)?} $line _ sp]} {
+            if {$sp != ""} {
+                puts [string range $line 2 end]
+            } else {
+                puts ""
+            }
+        } else {
+            puts $line
+        }
+    }
+
+    exit
+}
+
+while {[gets stdin line] >= 0} {
+    puts "$qchar $line"
+}

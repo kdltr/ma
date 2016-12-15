@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# convert to upper/lower case
+
+case "$0" in
+    *downcase)
+        exec tr '[:upper:]' '[:lower:]';;
+    *)
+        exec tr '[:lower:]' '[:upper:]';;
+esac

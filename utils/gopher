@@ -1,0 +1,197 @@
+#!/usr/bin/env tclsh
+#
+# gopher client for MA
+
+
+set download_loc $env(HOME)/tmp
+set image_viewer I
+set html_viewer viewhtml
+set document_viewer P
+
+
+fconfigure stdout -translation lf
+fconfigure stderr -translation lf
+
+set ma ""
+
+if {[info exists env(MA)]} {
+    set ma $env(MA)
+}
+
+if {[info exists env(TMPDIR)]} {
+    set tmpdir $env(TMPDIR)/
+} else {
+    set tmpdir "/tmp"
+}
+
+proc Usage {{code 1}} {
+    puts stderr {usage: gopher [-type TYPE] [SELECTOR] HOST [PORT]}
+    exit $code
+}
+
+if {[regexp {^--?h(elp)?$} $argv]} {Usage 0}
+
+if {$argc < 1 || $argc > 5} Usage
+
+lassign $argv sel host port x y
+set type 1
+
+if {$sel == "-type"} {
+    set type $host
+    set sel $port
+    set host $x
+    set port $y
+}
+
+if {$port == ""} {
+    if {[string is digit $host] && $host != ""} {
+        set port $host
+        set host $sel
+        set sel ""
+    } else {
+        if {$host == ""} {
+            set host $sel
+            set sel ""
+        }
+
+        set port 70
+    }
+}
+
+if {[catch [list socket $host $port] io]} {
+    exec echo "unable to connect to $host:$port" | ma-eval
+    exit
+}
+
+fconfigure $io -translation crlf
+puts $io $sel
+flush $io
+set processed "$tmpdir/[expr rand()].[clock seconds]"
+
+proc ReadFile {{dec ""}} {
+    global io processed
+    set data [read $io]
+    close $io
+    
+    if {$dec != ""} {
+        exec $dec << $data > $processed
+    } else {
+        set f [open $processed w]
+        puts $f $data
+        close $f
+    }
+
+    OpenFile $processed
+}
+
+proc OpenFile {fname} {
+    global ma sel host port type
+
+    if {$ma != ""} {
+        set title "⊳$host:$port/$sel⊲"
+
+        if {[string first " " $title] != -1} {
+            set title "'$title'"
+        }
+
+        exec ma -tag "[pwd]/+Gopher $title New Del Cut Paste Snarf Look Font Wrap | " \
+            -post-eval "ReplaceText \"$fname\"" &
+        after 250
+    } else {
+        exec cat $fname >@ stdout
+    }
+}
+
+proc SaveFile {prg} {
+    global io processed
+    fconfigure $io -translation binary -encoding binary
+    set f [open $processed w]
+    fconfigure $f -translation binary -encoding binary
+    fcopy $io $f
+    close $io
+    close $f
+    exec $prg $processed &
+    after 250
+}
+
+proc DownloadFile {{conv ""}} {
+    global io processed download_loc sel
+    fconfigure $io -translation binary -encoding binary
+    set f [open $processed w]
+    fconfigure $f -translation binary -encoding binary
+    fcopy $io $f
+    close $io
+    close $f
+    set fname "$download_loc/[file tail $sel]"
+
+    if {$conv != ""} {
+        exec $conv < $processed > $fname
+    } else {
+        file rename $processed $fname
+    }
+
+    exec echo "downloaded file to $fname" | ma-eval
+}
+
+proc ProcessFile {} {
+    global io processed
+    set data [read $io]
+    close $io
+    set f [open $processed w]
+
+puts stderr $data
+
+    foreach line [split $data "\n"] {
+        if {[regexp "^(.)(\[^\t\]*)\t(\[^\t\]*)\t(\[^\t\]+)\t(\\d+).*" $line _ type \
+            str sel host port]} {
+            if {$type == "i"} {
+                puts $f $str
+            } elseif {$type == "3"} {
+                puts $f "ERROR: $str"
+            } else {
+                if {$port != 70} {
+                    set port ":$port"
+                } else {
+                    set port ""
+                }
+
+                if {$type == 7} {
+                    puts $f "⊳$host$port?$sel?…⊲\t$str"
+                } else {
+                    if {$type != 1} {
+                        set type "=$type"
+                    } else {
+                        set type ""
+                    }
+    
+                    if {$sel != ""} {
+                        set sel "/$sel"
+                    } else {
+                        set sel ""
+                    }
+    
+                    puts $f "⊳$host$port$type$sel⊲\t$str"
+                }
+            }
+        }
+    }
+
+    close $f
+    OpenFile $processed
+}
+
+switch -exact -- $type {
+    g {SaveFile $image_viewer}
+    p {SaveFile $image_viewer}
+    d {SaveFile $document_viewer}
+    6 {DownloadFile uudecode}
+    9 {DownloadFile}
+    5 {DownloadFile}
+    h {SaveFile $html_viewer}
+    1 ProcessFile
+    I {SaveFile $image_viewer}
+    default ReadFile
+}
+
+file delete $processed
+
