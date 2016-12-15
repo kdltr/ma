@@ -3,6 +3,14 @@ set current_variable_font "Liberation Sans"
 set image_viewer "sxiv"
 set pdf_viewer "mupdf-x11"
 
+source ~/code/ma/utils/hooks.tcl
+
+proc SchemeFileHook {} {
+    uplevel #0 { source ~/code/ma/utils/scheme-indent.tcl }
+    SchemeIndent
+}
+AddFileHook {\.scm$} SchemeFileHook
+
 DefinePlumbing {^(.+)(.png|.jpg|.jpeg|.gif)} {
     set fname [CanonicalFilename [GetArg 0]]
     if {[file exists $fname]} {
