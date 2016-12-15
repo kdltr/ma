@@ -36,8 +36,8 @@ if {$id == ""} {
     set dname "$dir/+Errors"
 
     if {[catch [list send $dname #]]} {
-        exec ${exec_prefix}ma -name $dname -noscroll -tag \
-            "$dir/+Errors new Del Cut Paste Snarf Send Look Font Scroll | " &
+        exec ${exec_prefix}ma -name $dname -tag \
+            "$dir/+Errors New Del Cut Paste Snarf Send Look Font Wrap Scroll | " &
         after 500
     }
 
@@ -49,7 +49,7 @@ if {$id == ""} {
 
 if {$exp == ""} {set exp [read stdin]}
 
-if {[catch [eval send $async $id $exp] result]} {
+if {[catch [list eval send $async $id $exp] result]} {
     exit 1
 }
 

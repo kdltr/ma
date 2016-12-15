@@ -1,114 +1,150 @@
 
-  "ma"
-  ~~~~
+  MA
+  ~~~
 
-Ma is a minimalistic clone of the acme[1] editor used in Plan 9, and is written 
-in Tcl/Tk. It has been tested on with Tcl/Tk 8.5, mostly under Linux. Ma has 
-successfully been run on Mac OS X with XQuartz, but needs a tiling window 
-manager to be used in a halfway satisfactory way. 
+MA is a minimalistic clone of the acme[1] editor used in Plan 9, and
+is written in Tcl/Tk. It has been tested with Tcl/Tk 8.5, mostly under
+Linux. MA has successfully been run on Mac OS X with XQuartz, but needs
+a tiling window manager to be used in a satisfactory way.
 
-I used emacs[2] for years, but got bored with the ever growing number of 
-extensions and key-combinations that one accumulates when intensively using
-that editor. I also got fed up with the fact that purely keyboard driven 
-interfaces involve frantic typing, something that appears to stress me. Acme, 
-which is heavily mouse-controlled, seems to produce a more relaxed, 
-single-handed use, especially for navigation and browsing. I'm much slower now 
-(or at least this is my impression), but less hectic while working (it seems).
+I used emacs[2] for years, but got bored with the ever growing number
+of extensions and key-combinations that one accumulates when intensively
+using that editor. I also got fed up with the fact that purely keyboard
+driven interfaces involve frantic typing, something that appears to stress
+me. Acme, which is heavily mouse-controlled, seems to produce a more
+relaxed, single-handed use, especially for navigation and browsing. I'm
+slower now (or at least this is my impression), but less hectic while
+working (it seems).
 
-Another advantage of acme is the dynamic nature of extending the user-interface 
-while one is using it - nearly everything is text, and nearly every text can be 
-mouse-sensitive. 
+Another advantage of acme is the dynamic nature of extending the
+user-interface while one is using it - nearly everything is text, and
+nearly every text can be mouse-sensitive.
 
-Note that this editor is single-window based - it doesn't provide multiple 
-windows, nor does it manage them in any way (this is delegated to the window 
-manager.) 
+Note that this editor is single-window based - it doesn't provide multiple
+windows, nor does it manage them in any way (this is delegated to the
+window manager.)
 
 Installation:
 
-Invoke "build" and put the files "ma", "ma-eval", "mwd", "win", "pty" and "B" in your PATH.
+Invoke "build" and put the files "ma", "ma-eval", "awd", "win", "pty"
+and "B" in your PATH.
 
 Usage:
 
-"ma" works basically like Acme, but does no own window-management. 
-Configuration is done by a file "~/.ma", holding Tcl code to modify fonts, colors, etc.
-A number of command-line options can be provided to set various of these
-options and to run "ma" in special modes, or comunicate with the "registry",
-a "ma" instance that allows locating files that are already open.
+MA works basically like Acme, but does no own window-management.
+Configuration is done in the file "~/.ma", holding Tcl code to modify
+fonts, colors, etc.  A number of command-line options can be provided to
+set various of these options and to run MA in special modes, or comunicate
+with the "registry", a MA instance that allows locating files that are
+already open.
 
 To start the registry, run
 
   ma -registry &
 
-The registry is implemented by the Tk "send" command, so X-forwarding must be
-disabled (enter "xhost" to see wether this is the case). "ma" should still run, but
-features related to the registry will not be available in this case.
+The registry is implemented using the Tk "send" command, so X-forwarding
+must be disabled (enter "xhost" to see wether this is the case). MA
+should still run, but features related to the registry will not be
+available in this case (locating already open windows, and "Putall".)
 
-"B" takes one ore more filenames (optionally followed by an address) and opens
-the given files or activates already open windows holding these files.
+The "B" program takes one ore more filenames (optionally followed by
+an address) and opens the given files or activates already open windows
+holding these files.
 
-"pty" is a generic program running a subprocess in a pseudo terminal and is
-used by "win" to have interactive windows inside a "ma" instance. Note that this
-is currently very crude and does not support escape codes of any kind.
+"pty" is a generic program running a subprocess in a pseudo terminal and
+is used by "win" to have interactive windows inside a MA instance. Note
+that this is currently very crude and does not support escape codes of
+any kind.
 
-"ma-eval" can be used to evaluate Tcl code in a running "ma" instance, "mwd"
-sets the label of the window in which the command is executed (similarly to "awd"
-in the original Acme). You can create an alias for "cd" to set the label automatically:
+"ma-eval" can be used to evaluate Tcl code in a running MA instance,
+"awd" sets the label of the window in which the command is executed. You
+can create an alias for "cd" to set the label automatically when used
+inside an interactive shell window:
+
 
 alias cd="_cd"
 
 function _cd () {
     \cd "$@"
     if test -n "$MA"; then
-        mwd bash
+        awd bash
     fi
 }
 
-When the registry is running, the window that has the current focus has a white border
-around it. Executing commands in the body of another window will then perform the
-execution in the context of the focus window. Execution in the tag of a window always
-has that window as context, regardless of focus.
+When the registry is running, the window that has the current focus is
+drawn with a white border around it. Executing commands in the body of
+another window will then perform the execution in the context of the
+focus window. Execution in the tag of a window always has that window
+as context, regardless of focus.
 
-Ma is not finished, and probably never will. For more information, consult the 
+Environment variables:
+
+MA_HISTORY
+    If set, all code that is executed in "win" mode or via B2 is logged in the file given in
+    this variable (this includes all input, including passwords!)
+
+MA_INCLUDE_PATH
+    Lists additional include-directories, separated by ":" (default: "/usr/include")
+
+SHELL
+    Shell to use for executing commands (default: "bash")
+
+MA
+    Set to the name of the wish(1) instance when executing external programs.
+
+Extending:
+
+Use "DefineCommand REGEX EXPR" to define Tcl code to be executed when the
+command given in REGEX is executed, i.e.
+
+    DefineCommand {^MyCommand\s+(.+)$} { ... }
+
+Arguments (subpatterns in the regex) can be extracted with "GetArg".
+
+"DefinePlumbing REGEX EXPR" adds plumbing rules, where EXPR should return
+1 if the rule matches or 0 if not (and another rule should be tried).
+
+The "ma-eval" shell command simple sends code to be evaluated by the MA instance
+given in the first argument, subprocesses can access the instance name using the
+$MA environment variable.
+
+
+MA is not finished, and probably never will. For more information, consult the 
 source code or contact me[3]. 
 
 
 To do:
 
-- (bug) document ma-eval + use of registry properly
-- (bug) acquisition of file from dir-view doesn't seem to add auto_post_eval
-  - the reason is that just setting the theme doesn't set auto_post_eval again
 - (bug) crash of program in win-mode doesn't print any message
 - (bug) KeyRelease-event in .tag (getting through after invoking dmenu(1) in this
-  case) results in incorrect resize of tag, even though only first line contains
-  text
+  case) results in incorrect resize of tag, even though only first line contains text
+- (bug) Automatic resizing of the tag doesn't always work
 - (bug) sort order in columnar listing is wrong (should be rowwise, not columnwise)
 - (bug) Mac/X11: wrong arrow cursor (points right)
 - (bug) Delete key should send SIGINT instead of SIGKILL
 - (bug) Tk seems to clear the clipboard when exiting, so the contents copied from
-  a terminated instants are not recovered
-- (bug) the selection is sometimes retained even after input
+  a terminated instance are not recovered
+- (bug) the (pseudo-)selection is sometimes retained even after input
+- (bug) MA_LABEL isn't always set
 
 Possible extensions:
 
-- Detect "password:" in output (win mode) and temporarily use special
-  keyboard handler to display "*" instead (until non-graphical char or enter)
-- smoother flashing (use "winfo rgb" to obtain color components and fade out
-  color)
 - dumping window state (tag + body) to file, and restore, possibly
   combined with auto-dumping, where ma in registry mode could restore
   all auto-dumped files from a given directory.
+- optional mode to save configuration for saved files, to be reloaded when the
+   file is opened again
 
 Shortcomings:
 
 - the file-registry needs to be explicitly started
-- Ctrl-C/Kill: is too coarse - we can't start background processes without
-  killing them on exit
+- the "Kill" command (Del key) is too coarse and kills all subprocesses
 - width use for computing columnar layout seems not to be correct (always 80?)
-- autosnarf: no idea how to do this, keeping current selection and copying when
-  selection gets empty doesn't work, since selection by mouse apparently clears
+- autosnarf when selecting: no idea how to do this, keeping current selection and copying 
+  when selection gets empty doesn't work, since selection by mouse apparently clears
   it in between movements
   - perhaps detect when selection changes from non-empty to empty
-- there is no Zerox command
+- there is no "Zerox" command
 - works very bad on Mac/Aqua and Windows:
   - Mac: default Tcl/Tk crashes, freshly installed (Aqua) aborts unexpectedly, B2/B3 
     are swapped, slow startup (Mac/X11 works surprisingly well, though)
@@ -121,49 +157,106 @@ Shortcomings:
 - B2 in .sbar should respect current offset from mouse-pointer to top
   of bar (currently scrolls so that top of bar is reference-point)
 - The move-box of a window is faked with a special unicode char
-- Address syntax only supports a subset of acme/sam as is rather crude (see also
-  comment in ParseAddr)
+- Address syntax only supports a subset of acme/sam and is rather crude (see also
+  comment in ParseAddr), "/.../"/"?...?" addresses only select a position, not ranges
+- In "win" mode, MA tries to remove the prompt from input lines, but moving
+  the insertion point may confuse this, if possible use a prompt for interactively
+  used programs that will be ignored (e.g. ":;" for sh)
+- Password-entry in "win" mode works only when the insertion cursor is not moved by
+   mouse or cursor-movement keys
+- "Putall" is implemented, but will save all files in all open windows, even on
+  virtual screens not currently visible
 
 Unclear:
 
-- we could implement Putall via registry, but is it wise, assuming modified windows
-  on other (virtual) screens exist?
-  - or could add command to list (in log-window) all dirty instances, by sending 
-    command to registry, which in turn asks all registered instances
 - use file-registry for locating +Errors windows, instead of custom appname?
-  (but that requires registry to be running)
+   (but that requires registry to be running)
 
 Differences to acme(1):
 
+- Tab does not insert "\t", for religious reasons
 - (obviously) single-window mode
-- no dynamic update of tagline (except filename)
+- no dynamic update of undo/redo commands tag (except filename)
 - auto-chmod when saving file beginning with "#!/"
-- missing commands: Zerox, Putall, Edit
-- supports Up/Down move by lines
-- B1B2B3 leaves file modified
+- missing commands: "Zerox", "Edit", "Incl"
+- supports Up/Down movement by line
 - inserting with active selection doesn't snarf
-- handles CRNL transparently (but destructively)
 - indentation-setting is window-local
 - executing with redirection in "win" mode invokes shell, and does not send
   the command to the process running in the window
 - executing in tag always has current window as context, executing in body has
   currently focussed window as context (if registry is running)
 - double-clicking opening bracket selects forward, but quote-scanning
-  only works backwards (in acme both bracket and quotes only select backwards)
+  works backwards (in acme both bracket and quotes only select backwards)
 - indent-mode works differently
-- word under cursor is defined as ws-delimited
-- "project" files ("./.ma.p")
+- word under cursor is defined as ws-delimited (excluding parentheses)
 - win-mode: pressing RETURN before current insert point sends the whole line
 - "noscroll" mode is much weaker and only available in "+Errors" + "win" windows
 - basic keyboard commands for mouse-less operation: 
-  - C-1 (toggle focus), C-2 (execute selection), C-3 (acquire selection)
+  C-1 (toggle focus), C-2 (execute selection), C-3 (acquire selection)
 - B3-search is case-insensitive, search with "Look" is not
 - "//.../" address disables most regex syntax (used for ctags)
+- Various emacsish keyboad sequences, as provided by the Tk text widget
+- Additional commands: "Anchor", "Withdraw", "Tcl", "Crnl", "Replace", "Wrap"
+- MA supports paren-matching
+- Shift-B3 is equivalent to B2
+- Acquiring an existing window doesn't warp mouse to current selection
 
-Features found in wily[4], that might be useful:
 
-- Dotfiles: toggle display of dotfiles in dir listings (default off?)
-- .wilytools: add text to tag depending on opened file
+All of MA's source code is hereby placed in the public domain
+
+
+Version history:
+
+4
+
+    - Corrected initial tag relayout.
+    - Resizing scrolls to bottom if "scroll" mode is on.
+    - Dropped "-noscroll" option, added "-scroll".
+    - Filename completion adds final "/" for directory only if it doesn't need quoting.
+    - Added "name_hook", moved "project" files into extension.
+    - Replaces some message-boxes with marked text in +Errors window.
+    - Revertion shows message when file is modified, similar to "Del".
+    - "Wrap" command is shown in tag by default.    
+    - "Get FNAME" checks whether the current file is modified.
+
+3
+
+    - "New" starts new instance in current context.
+    - "Send" just appends at end (as in acme).
+    - Added "Putall".
+    - final delimiter in "/.../" + "?...?" addresses is optional now.
+    - switching to existing window via B3 warps mouse pointer to current selection
+      or insertion point.
+    - got rid of spurious newlines in tag that where sometimes added.
+    - directory listing quotes with "\"", when filename includes "\''".
+    - text in tag window wraps correctly when the window is resized.
+    - ESC selects up to insertion point at last mouse click, not the clicked location.
+    - the "dirty" marker is filtered out in most cases of clicking the label.
+    - (mostly) correct handling of backspace when entering passwords in win-mode.
+    - B1B2B3 leaves file unmodified.
+    - C-k snarfs deleted text.
+    - B1-doubleclick in the empty space after a text line selects the complete line.
+
+2 
+
+    - added some improvements in built-in plumbing rules.
+    - the registry logs its actions inside its own text body.
+    - the scroll-area is grayed in "scroll" mode.
+    - failure to open file outputs error in "+Errors" window.
+    - auto-detection of line-end translation, CRNL line-temrinators are preserved.
+    - fixed problems in some uses of "catch" which didn't properly evaluate their arguments.
+    - directory listings quote filenames, when necessary.
+    - running subprocesses are now not killed on termination.
+    - added MA_LABEL environment variable for subprocesses.
+    - a clicked word does not include parentheses or brackets/braces now.
+    - the history file is now made user-accessible only when written.
+    - added (crude) support for password entry in win-mode.
+    - added "-fontstyle" option.
+
+1
+
+    - initial release.
 
 
 [1] http://acme.cat-v.org/
