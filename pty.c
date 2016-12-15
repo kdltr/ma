@@ -33,7 +33,7 @@ static uint64_t orwl_timestart = 0;
 
 
 void orwl_gettime(struct timespec *t) {
-  // be more careful in a multithreaded environement
+  // be more careful in a multithreaded environment
   if (!orwl_timestart) {
     mach_timebase_info_data_t tb = { 0 };
     mach_timebase_info(&tb);
