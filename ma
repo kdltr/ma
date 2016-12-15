@@ -8,8 +8,8 @@
 
 set current_font_size 12
 set tag_font_size $current_font_size
-set current_fixed_font "terminus"
-set current_variable_font "Liberation Sans"
+set current_fixed_font "Courier"
+set current_variable_font "Helvetica"
 set current_font $current_variable_font
 set current_font_style normal
 set current_filename ""
@@ -55,8 +55,6 @@ set command_input_file ""
 set any_output 0
 set mailer "M"
 set browser "firefox"
-set image_viewer "sxiv"
-set pdf_viewer "mupdf-x11"
 set b1_down 0
 set b2_down 0
 set b2_start ""
@@ -175,14 +173,6 @@ set plumbing_rules {
         GotoFileAddress [file normalize [GetArg 1]] [GetArg 2] 
     }}
     {{^([^:]+):} { GotoFileAddress [file normalize [GetArg 1]] }}
-    {{^(.+)(.png|.jpg|.jpeg|.gif)} {
-        global image_viewer
-        exec $image_viewer [GetArg 0]
-    }}
-    {{^(.+).pdf} {
-        global pdf_viewer
-        exec $pdf_viewer [GetArg 0]
-    }}
     {{^(\S+)\((\d+)\)$} { 
         InvokeExternalCommandInWindow "man [GetArg 2] [GetArg 1]" 
     }}
