@@ -1,4 +1,4 @@
-#!/home/kooda/.guix-profile/bin/wish8.6
+#!/usr/bin/env wish
 #### ma - a minimal variant of acme(1)
 #
 # (c)MMXV Felix L. Winkelmann
@@ -50,7 +50,7 @@ set indent_mode 0
 set command_input_file ""
 set any_output 0
 set mailer "M"
-set browser "icecat"
+set browser "firefox"
 set image_viewer "sxiv"
 set pdf_viewer "mupdf-x11"
 set b1_down 0
