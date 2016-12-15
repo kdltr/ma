@@ -1,0 +1,107 @@
+
+    Extensions for "ma"
+    ~~~~~~~~~~~~~~~
+
+
+This directory contains a number of extensions for "ma"[1], a small "Acme"[2]  clone,
+written in Tcl/Tk. Note that all of this is hacked together for personal use, sufficient to
+do the job, but neither polished not perfect. Use at your own risk and modify to your
+liking.
+
+
+• "snippets.tcl": Entering unicode characters using dmenu[3], similar to the compose key in Plan 9.
+
+    Put the program "snip" in your PATH, and add this to ~/.ma:
+
+       DefineKey <Control-q> {
+          set f [open "| snip < /dev/null" r]
+          Insert [string trim [read $f]]
+           catch [list close $f]
+       }
+
+    Change the location of "snippets.tcl" in the "snip" script to something appropriate for your 
+    setup.
+
+• "hooks.tcl": Simple hooks when loading files with a particular extension.
+
+     source <path>/hooks.tcl
+
+      AddFileHook {\.(c|h|cpp)$} {
+         global indent_mode
+         set indent_mode 1
+     }
+
+• "ctags.tcl": Support for locating definitions in programs for various languages with ctags(1)
+
+      source <path>/ctags.tcl
+
+    Defines a command named "Tag" that locates the selected word, or the word under dot.
+    Also works as "Tag <word>". The generated "tags" file must be in the current directory.
+
+• "scheme-indent.tcl": (very) simple Scheme indentation.
+
+      source <path>/scheme-indent.tcl
+
+    Enabled with the "SchemeIndent" command, consider adding this:
+
+        AddFileHook {\.(scm|ss|scheme|meta|setup)$} SchemeIndent
+
+• "archive.tcl": dump contents of archive files on B3.
+
+• "mark.tcl": mark regex or address with color.
+
+• "gopher.tcl": minimal gopher client.
+
+    Uses "gopher" tool for retrieving pages.
+
+* "project.tcl": simple "project" files.
+
+      source <path>/project.tcl
+
+    When opening a file or directory, any file named ".ma.p" in the same directory
+    or one of its parent directories will be loaded once.
+
+• "savedstate.tcl": save font/colors for every saved file and restore when reopened.
+
+• Color themes: Simple color schemes.
+
+        set theme_counter 1
+        source <path>/colors/solarized.tcl
+        ⁝
+
+    The functiion keys select the current color scheme.
+
+• Tools:
+
+    g EXPRESSION
+
+        Invokes grep(1) with argument EXPRESSION for usual text and source code files.
+
+    gg EXPRESSION
+
+        Shorthand for "git grep"
+
+    h [EXPRESSION]
+
+        Grep EXPRESSION in history file, or show last 30 entries.
+
+    upcase
+
+        Read text and convert to uppercase, copy (or symlink) this to "downcase" to
+        do the opposite.
+
+    unquote
+
+        Unquote E-mail text (remove leading "> ")
+
+    ind [N]
+
+        Indent input by N characters (defaults to 4), copy or symlink to "unind" to unindent.
+
+
+All of this code is placed in the public domain.
+
+
+[1] http://www.call-with-current-continuation.org/ma.tar.gz
+[2] http://acme.cat-v.org/
+[3] http://tools.suckless.org/dmenu

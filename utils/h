@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# grep in history
+
+
+if test -z "$MA_HISTORY"; then
+    exit
+fi
+
+if test -z "$1"; then
+    exec tail -n30 $MA_HISTORY | uniq -u
+else
+    exec grep "$@" $MA_HISTORY | uniq -u
+fi

@@ -1,0 +1,34 @@
+#!/usr/bin/tclsh
+#
+# indent/unindent
+#
+# usage: ind [COLUMNS]
+
+set c 4
+
+if {$argc > 0} {
+    set c [lindex $argv 0]
+}
+
+if {[regexp {unind$} $argv0]} {
+    set c [expr -$c]
+}
+
+if {$c > 0} {
+    set prefix [string repeat " " $c]
+}
+
+while {[gets stdin line] >= 0} {
+    if {$line == "" && [eof stdin]} break
+
+    if {$c > 0} {
+        puts "$prefix$line"
+    } else {
+        puts [string range $line [expr -$c] end]
+    }
+}
+
+
+# TODO
+#
+# - tabs are not expanded, yet
