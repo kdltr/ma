@@ -8,6 +8,7 @@ source ~/code/ma/utils/hooks.tcl
 proc SchemeFileHook {} {
     uplevel #0 { source ~/code/ma/utils/scheme-indent.tcl }
     SchemeIndent
+    ToggleFont fix
 }
 AddFileHook {\.scm$} SchemeFileHook
 
