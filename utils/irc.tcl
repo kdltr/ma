@@ -1,5 +1,8 @@
 set irc_input_file [open in w]
 
+source ~/code/ma/utils/colors/mono.tcl
+Mono
+
 wm title . [file tail [pwd]]
 text .e -height 1
 pack .e -fill x

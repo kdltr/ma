@@ -3,6 +3,9 @@ set current_variable_font "Liberation Sans"
 set image_viewer "sxiv"
 set pdf_viewer "mupdf-x11"
 
+
+## File hooks
+
 source ~/code/ma/utils/hooks.tcl
 
 proc SchemeFileHook {} {
@@ -11,6 +14,18 @@ proc SchemeFileHook {} {
     ToggleFont fix
 }
 AddFileHook {\.scm$} SchemeFileHook
+
+
+## Color schemes
+
+set theme_counter 1
+foreach x "acme autumn-light blue-sea crisp electric faff
+                   glowfish goldenrod relaxed solarized subatomic zenburn" {
+    source ~/code/ma/utils/colors/$x.tcl
+}
+
+
+## Plumbing rules
 
 DefinePlumbing {^(.+)(.png|.jpg|.jpeg|.gif)} {
     set fname [CanonicalFilename [GetArg 0]]
