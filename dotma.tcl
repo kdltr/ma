@@ -13,7 +13,7 @@ proc SchemeFileHook {} {
     SchemeIndent
     ToggleFont fix
 }
-AddFileHook {\.scm$} SchemeFileHook
+AddFileHook {\.sc.?$} SchemeFileHook
 
 
 ## Color schemes
