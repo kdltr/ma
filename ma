@@ -553,18 +553,22 @@ proc ToggleFont {{mode ""}} {
     global current_font current_fixed_font current_variable_font
    
     switch $mode {
-        fix { set current_font $current_fixed_font }
-        var { set current_font $current_variable_font }
+        fix {
+            set current_font $current_fixed_font
+            ResizeFont -2
+        }
+        var {
+            set current_font $current_variable_font
+            ResizeFont 2
+        }
         default {
             if {$current_font == $current_fixed_font} {
-                set current_font $current_variable_font
+                ToggleFont var
             } else {
-                set current_font $current_fixed_font
+                ToggleFont fix
             }
         }
     }
-
-    ResizeFont 0
 }
 
 
