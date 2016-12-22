@@ -8,7 +8,7 @@ text .e -height 1
 pack .e -fill x
 
 bind .e <Return> {
-    set input [.e get @0,0 @0,1024]
+    set input [.e get "insert linestart" "insert lineend"]
 
     if {[regexp {^/me (.*)} $input _ text]} {
         puts $irc_input_file "\x01ACTION $text\x01"
@@ -17,6 +17,5 @@ bind .e <Return> {
     }
 
     flush $irc_input_file
-    .e delete @0,0 end
+    .e delete 1.0 end
 }
-
