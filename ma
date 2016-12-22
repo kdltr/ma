@@ -9,7 +9,9 @@
 set current_font_size 12
 set tag_font_size $current_font_size
 set current_fixed_font "Courier"
+set fixed_font_size 10
 set current_variable_font "Helvetica"
+set variable_font_size 12
 set current_font $current_variable_font
 set current_font_style normal
 set current_filename ""
@@ -551,15 +553,16 @@ proc InsertAnchor {} {
 
 proc ToggleFont {{mode ""}} {
     global current_font current_fixed_font current_variable_font
+    global current_font_size fixed_font_size variable_font_size
    
     switch $mode {
         fix {
             set current_font $current_fixed_font
-            ResizeFont -2
+            set current_font_size $fixed_font_size
         }
         var {
             set current_font $current_variable_font
-            ResizeFont 2
+            set current_font_size $variable_font_size
         }
         default {
             if {$current_font == $current_fixed_font} {
@@ -569,6 +572,7 @@ proc ToggleFont {{mode ""}} {
             }
         }
     }
+    ResizeFont 0
 }
 
 
@@ -1153,7 +1157,10 @@ proc Terminate {{force 0}} {
 
 proc ResizeFont {inc} {
     global current_font_size current_font current_font_style
+    global fixed_font_size variable_font_size
     set current_font_size [expr $current_font_size + $inc]
+    set fixed_font_size [expr $fixed_font_size + $inc]
+    set variable_font_size [expr $variable_font_size + $inc]
     .t configure -font [list $current_font $current_font_size $current_font_style]
     RunHook configuration_hook
 }
