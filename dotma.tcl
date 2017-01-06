@@ -1,5 +1,7 @@
 set current_fixed_font "Liberation Mono"
 set current_variable_font "Liberation Sans"
+set current_font $current_variable_font
+
 set image_viewer "sxiv"
 set pdf_viewer "mupdf-x11"
 
