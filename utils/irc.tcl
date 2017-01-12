@@ -10,10 +10,10 @@ pack .e -fill x
 bind .e <Return> {
     set input [.e get "insert linestart" "insert lineend"]
 
-    if {[regexp {^/me (.*)} $input _ text]} {
+    if {[regexp {^/me (.*)} "$input" _ text]} {
         puts $irc_input_file "\x01ACTION $text\x01"
     } else {
-        puts $irc_input_file $input
+        puts $irc_input_file "$input"
     }
 
     flush $irc_input_file
