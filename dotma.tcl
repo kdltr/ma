@@ -15,7 +15,7 @@ proc SchemeFileHook {} {
     SchemeIndent
     ToggleFont fix
 }
-AddFileHook {\.sc.?$} SchemeFileHook
+AddFileHook {\.(sc.?|egg)$} SchemeFileHook
 
 
 ## Color schemes
