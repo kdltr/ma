@@ -76,7 +76,9 @@ int main(int argc, char* argv[])
     }
 
     if(r > 0) {
-      if((pfd[ 0 ].revents & POLLERR) != 0) {
+      if((pfd[ 0 ].revents & POLLERR) != 0
+         || (pfd [ 0 ].revents & POLLHUP) != 0
+         || (pfd [ 1 ].revents & POLLHUP) != 0) {
         close(fd);
         return 0;
       }
@@ -97,11 +99,6 @@ int main(int argc, char* argv[])
           perror("write to subprocess");
           return 1;
         }
-      }
-
-      if((pfd[ 1 ].revents & POLLHUP) != 0) {
-        close(fd);
-        return 0;
       }
 
       if((pfd[ 1 ].revents & POLLIN) != 0) {
