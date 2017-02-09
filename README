@@ -197,7 +197,7 @@ Differences to acme(1):
 - B3-search is case-insensitive, search with "Look" is not
 - "//.../" address disables most regex syntax (used for ctags)
 - Various emacsish keyboad sequences, as provided by the Tk text widget
-- Additional commands: "Anchor", "Withdraw", "Tcl", "Crnl", "Replace", "Wrap"
+- Additional commands: "Anchor", "Withdraw", "Tcl", "Crnl", "Replace", "Wrap", "Back"
 - MA supports paren-matching
 - Shift-B3 is equivalent to B2
 - Acquiring an existing window doesn't warp mouse to current selection
@@ -206,7 +206,24 @@ Differences to acme(1):
 All of MA's source code is hereby placed in the public domain
 
 
+Acknowledgements:
+
+    Thanks to:
+
+        Lucas Sköldqvist for various tips and suggestions.
+        Kooda for fixing my completely broken implementation of pty.c
+
 Version history:
+
+5
+
+    - When the label is updated, set the windows' title accordingly (suggested by Lucas Sköldqvist.)
+    - added termination_hook.
+    - Always enable word-wrap in win mode.
+    - Computing the word under the cursor ignores the label marker character.
+    - Added "Back" command to move insertion mark back to old position after search.
+    - Replaced pty.c with a version that doesn't eat CPU time and is much simpler (thanks to
+      Kooda)
 
 4
 
