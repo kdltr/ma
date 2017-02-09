@@ -1,9 +1,9 @@
 #!/usr/bin/env wish
 #### ma - a minimal variant of acme(1)
 #
-# (c)MMXV Felix L. Winkelmann
+# (c)MMXV-MMXVII Felix L. Winkelmann
 #
-# Version: 4
+# Version: 5
 
 
 set current_font_size 12
@@ -79,12 +79,14 @@ set withdrawn 0
 set last_del_attempt 0
 set exec_prefix ""
 set configuration_hook {}
+set termination_hook {}
 set scroll 0
 set focus_window ""
 set has_focus 0
 set save_hook {}
 set password_input ""
 set cut_unmodified ""
+set position_stack {}
 
 
 if {[info exists env(MA_INCLUDE_PATH)]} {
@@ -148,6 +150,7 @@ set command_table {
     {{^Anchor$} InsertAnchor}
     {{^Withdraw$} WithdrawWindow}
     {{^Putall$} {SaveAllModified 0}}
+    {{^Back$} PopMoveInsert}
     {{^Crnl$} {
         global current_translation
         set current_translation "crnl"
@@ -461,10 +464,31 @@ proc GotoBodyAddress {addr {flash 0}} {
         Flash blue
     }
 
-    .t mark set insert $p1
-    .t see insert
+    MoveInsert $p1
     WarpToIndex .t insert
     return 1
+}
+
+
+proc MoveInsert {pos {see 1}} {
+    global position_stack
+    lappend position_stack [.t index insert]
+    .t mark set insert $pos
+
+    if {$see} {.t see insert}
+}
+
+
+proc PopMoveInsert {{see 1}} {
+    global position_stack
+
+    if {$position_stack != ""} {
+        RemoveSelection .t
+        .t mark set insert [lindex $position_stack end]
+        set position_stack [lrange $position_stack 0 end-1]
+
+        if {$see} {.t see insert}
+    }
 }
 
 
@@ -733,6 +757,7 @@ proc UpdateTag {{fname ""}} {
 	set fname $current_filename
     }
 
+    wm title . $fname
     MakeTag $fname
     .tag mark set insert "1.0 lineend"
     catch [list send -async MA-registry Register [tk appname] $fname]
@@ -776,6 +801,7 @@ proc OpenNewFile {fname} {
 
 proc OpenFile {{name ""} {replace 1}} {
     global current_filename last_opened current_translation
+    global position_stack
 
     if {$name == ""} {
 	set init [GetFileDir]
@@ -801,6 +827,7 @@ proc OpenFile {{name ""} {replace 1}} {
 		Insert $text
 	    }
 	    
+            set position_stack {}
             set current_translation $tr
 	    Unmodified
             RunHook file_hook
@@ -816,11 +843,12 @@ proc OpenFile {{name ""} {replace 1}} {
 
 
 proc ReplaceText {fname} {
-    global current_translation
+    global current_translation position_stack
     lassign [ReadFile $fname] text tr
     SetText $text
     .t mark set insert 1.0
     .t see insert
+    set position_stack {}
     Unmodified
 }
 
@@ -935,7 +963,7 @@ proc FormatColumnar {list} {
 
 
 proc OpenDirectory {name} { 
-    global current_translation
+    global current_translation position_stack
     set name [file normalize $name]
     Flash green
 
@@ -962,6 +990,7 @@ proc OpenDirectory {name} {
     UpdateTag "$name/"
     SetText $text
     .t mark set insert 1.0
+    set position_stack {}
     Top
     ToggleFont fix
     set current_translation lf
@@ -1151,6 +1180,7 @@ proc Terminate {{force 0}} {
 #    }
 
     catch [list send -async MA-registry Unregister [tk appname]]
+    RunHook termination_hook
     exit
 }
 
@@ -1415,7 +1445,7 @@ proc Acquire {} {
 
     lassign [DeconsTag] m name
 
-    if {"$m$name" == $dest} {
+    if {"$name" == $dest} {
         RemoveSelection .t
         .t tag add sel 1.0 end
         return
@@ -1478,8 +1508,7 @@ proc Search {{str ""} {start ""} {case 0}} {
 	set len [string length $search_string]
 	set end "$found + $len chars"
 	.t tag add sel $found $end
-        .t mark set insert $end
-	.t see $found
+        MoveInsert $end
         WarpToIndex .t $found
     }
 }
@@ -1519,6 +1548,7 @@ proc GetWordUnderCursor {{fw ""}} {
 
 
 proc GetWordUnderIndex {fw idx} {
+    global tag_marker_dirty tag_marker_clean
     set startx [$fw index "$idx linestart"]
     regexp {^(\d+)\.} $startx _ lnum
     set endx [$fw index "$idx lineend"]
@@ -1527,7 +1557,7 @@ proc GetWordUnderIndex {fw idx} {
     set end [$fw get $posx $endx]
     regexp {\.(\d+)$} $posx _ col
 
-    if {[regexp -indices "(\[^ \t\r\"'()\\\[\\\]{}\]+)\$" $start _ pos]} {
+    if {[regexp -indices "(\[^ $tag_marker_dirty$tag_marker_clean\t\r\"'()\\\[\\\]{}\]+)\$" $start _ pos]} {
         set w0 [lindex $pos 0]
         
         if {[regexp -indices "^(\[^ \t\r\"'()\\\[\\\]{}\]+)" $end _ pos]} {
@@ -2052,6 +2082,7 @@ proc EnterWinMode {{cmd ""}} {
 
     set win_mode 1
     ToggleScroll 1
+    ToggleWrapMode char
     eval lappend executing_pids [ChildPids [pid $win_file]]
     fconfigure $win_file -blocking 0
     fileevent $win_file readable [list LogOutput $win_file]
