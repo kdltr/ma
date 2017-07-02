@@ -4,9 +4,9 @@
 
 
 set download_loc $env(HOME)/tmp
-set image_viewer I
+set image_viewer sxiv
 set html_viewer viewhtml
-set document_viewer P
+set document_viewer mupdf
 
 
 fconfigure stdout -translation lf
@@ -95,7 +95,7 @@ proc OpenFile {fname} {
         }
 
         exec ma -tag "[pwd]/+Gopher $title New Del Cut Paste Snarf Look Font Wrap | " \
-            -post-eval "ReplaceText \"$fname\"" &
+            -post-eval "ReplaceText \"$fname\"" -post-eval "Electric; ToggleFont fix" &
         after 250
     } else {
         exec cat $fname >@ stdout

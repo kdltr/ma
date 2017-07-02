@@ -2,6 +2,7 @@ set current_fixed_font "Liberation Mono"
 set current_variable_font "Liberation Sans"
 set current_font $current_variable_font
 
+set browser "chromium"
 set image_viewer "sxiv"
 set pdf_viewer "mupdf-x11"
 
@@ -28,6 +29,8 @@ foreach x "acme autumn-light blue-sea crisp electric faff
 
 
 ## Plumbing rules
+
+source ~/code/ma/utils/gopher.tcl
 
 DefinePlumbing {^(.+)(.png|.jpg|.jpeg|.gif)} {
     set fname [CanonicalFilename [GetArg 0]]
