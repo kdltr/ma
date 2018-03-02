@@ -10,9 +10,9 @@ proc SaveConfiguration {fname realname} {
     global current_variable_font current_font_size current_font_style
     global tag_foreground tag_background selection_foreground 
     global selection_background indent_mode
-    global sbar_color sbar_background wrap_mode pseudo_selection_foreground 
-    global pseudo_selection_background tag_marker_color
-    global file_encoding file_translation current_translation
+    global sbar_color sbar_background pseudo_selection_foreground 
+    global pseudo_selection_background
+    global file_encoding file_translation
     global inactive_selection_background current_fixed_font
     global focus_color nonfocus_color tabwidth include_path
     set f [open $fname w]
@@ -22,19 +22,17 @@ proc SaveConfiguration {fname realname} {
     puts $f "set current_font \"$current_font\""
     puts $f "set current_variable_font \"$current_variable_font\""
     puts $f "set current_fixed_font \"$current_fixed_font\""
+    puts $f "set current_font_size \"$current_font_size\""
     puts $f "set tag_foreground \"$tag_foreground\""
     puts $f "set tag_background \"$tag_background\""
     puts $f "set selection_foreground \"$selection_foreground\""
     puts $f "set selection_background \"$selection_background\""
     puts $f "set sbar_color \"$sbar_color\""
     puts $f "set sbar_background \"$sbar_background\""
-    puts $f "set wrap_mode $wrap_mode"
     puts $f "set pseudo_selection_foreground \"$pseudo_selection_foreground\""
     puts $f "set pseudo_selection_background \"$pseudo_selection_background\""
-    puts $f "set tag_marker_color \"$tag_marker_color\""
     puts $f "set file_encoding $file_encoding"
     puts $f "set file_translation $file_translation"
-    puts $f "set current_translation $current_translation"
     puts $f "set inactive_selection_background \"$inactive_selection_background\""
     puts $f "set focus_color \"$focus_color\""
     puts $f "set nonfocus_color \"$nonfocus_color\""
@@ -53,21 +51,7 @@ proc LoadConfiguration {fname} {
 
 proc MangleConfigFilename {fname} {
     global config_file_dir
-    set new ""
-    set len [string length $fname]
-
-    for {set i 0} {$i < $len} {incr i} {
-        set c [string index $fname $i]
-
-        if {![string is alnum -strict $c] && [string first $c "_-."] == -1} {
-            scan $c %c u
-            append new "%[format %02x $u]"
-        } else {
-            append new $c
-        }
-    }
-
-    return $config_file_dir/$new
+    return $config_file_dir/[MangleFilename $fname]
 }
 
 

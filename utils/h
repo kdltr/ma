@@ -1,14 +1,24 @@
-#!/bin/bash
+#!/bin/sh
 #
 # grep in history
-
 
 if test -z "$MA_HISTORY"; then
     exit
 fi
 
+keep="tail -n40"
+
+case "$1" in
+    -a)
+        shift
+        keep=cat;;
+    -h)
+        echo "h [-h] [-a] [STRING]" >&2
+        exit;;
+esac
+
 if test -z "$1"; then
-    exec tail -n30 $MA_HISTORY | uniq -u
+    exec tail -n30 $MA_HISTORY | uniq
 else
-    exec grep "$@" $MA_HISTORY | uniq -u
+    exec grep -a "$@" $MA_HISTORY | uniq | $keep
 fi

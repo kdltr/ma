@@ -7,10 +7,10 @@ set block_forms {
     when unless let let\* letrec letrec\* for-each map case set! else
     with-input-from-file with-output-to-file call-with-\* and-let\*
     lambda  append-map match match-let match-let\* match-lambda
-    with-\* handle-exceptions begin fluid-let match-lambda\*
+    with-\* handle-exceptions begin fluid-let parameterize match-lambda\*
     match-letrec define(-[a-z0-9]+)? receive syntax-rules
     er-macro-transformer ir-macro-transformer bitmatch bitconstruct
-    bitpacket dotimes
+    bitpacket dotimes condition-case
 }
 
 set control_forms {

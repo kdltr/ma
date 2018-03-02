@@ -4,7 +4,7 @@ pat="$1"
 shift
 
 if test -z "$1"; then
-    exec grep -n "$pat" `ls *.c *.h *.s *.pl *.py *.tex *.css *.org *.m *.scm *.lisp *.lsp *.el *.java *.tcl *.txt *.fp *.f 2>/dev/null`
+    exec grep -nH "$pat" `ls *.c *.cpp *.h *.s *.pl *.py *.tex *.css *.org *.m *.scm *.lisp *.lsp *.el *.java *.tcl *.txt *.fp *.f 2>/dev/null`
 else
-    exec grep -n "$pat" "$@"
+    exec grep -nH "$pat" "$@"
 fi

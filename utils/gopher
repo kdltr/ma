@@ -1,4 +1,4 @@
-#!/usr/bin/env tclsh
+#!/usr/bin/env wish
 #
 # gopher client for MA
 
@@ -7,6 +7,7 @@ set download_loc $env(HOME)/tmp
 set image_viewer sxiv
 set html_viewer viewhtml
 set document_viewer mupdf
+set gopher_history $env(HOME)/.gopher_history
 
 
 fconfigure stdout -translation lf
@@ -24,37 +25,52 @@ if {[info exists env(TMPDIR)]} {
     set tmpdir "/tmp"
 }
 
+
 proc Usage {{code 1}} {
-    puts stderr {usage: gopher [-type TYPE] [SELECTOR] HOST [PORT]}
+    puts stderr {usage: gopher [-h] [-type TYPE] [-sel SELECTOR] HOST [-port PORT] [-stdout] [-replace FLAG]}
     exit $code
 }
 
-if {[regexp {^--?h(elp)?$} $argv]} {Usage 0}
 
-if {$argc < 1 || $argc > 5} Usage
-
-lassign $argv sel host port x y
+set sel "/"
+set host ""
+set port 70
 set type 1
+set from ""
+set replace 0
 
-if {$sel == "-type"} {
-    set type $host
-    set sel $port
-    set host $x
-    set port $y
-}
+for {set i 0} {$i < $argc} {incr i} {
+    set arg [lindex $argv $i]
 
-if {$port == ""} {
-    if {[string is digit $host] && $host != ""} {
-        set port $host
-        set host $sel
-        set sel ""
-    } else {
-        if {$host == ""} {
-            set host $sel
-            set sel ""
+    switch -regexp -- $arg {
+        {^--?h(elp)?$} {Usage 0}
+        {^-sel$} {
+            incr i
+            set sel [lindex $argv $i]
         }
+        {^-port$} {
+            incr i
+            set port [lindex $argv $i]
+        }
+        {^-type$} {
+            incr i
+            set type [lindex $argv $i]
+        }
+        {^-from$} {
+            incr i
+            set from [lindex $argv $i]
+        }
+        {^-replace$} {
+            incr i
+            set replace [lindex $argv $i]
+        }
+        {^-stdout$} {set ma ""}
+        {^-} Usage
+        default {
+            if {$host != ""} Usage
 
-        set port 70
+            set host $arg
+        }
     }
 }
 
@@ -63,10 +79,15 @@ if {[catch [list socket $host $port] io]} {
     exit
 }
 
+set f [open $gopher_history a]
+puts $f "⊳$host:$port=$type/$sel⊲"
+close $f
+
 fconfigure $io -translation crlf
 puts $io $sel
 flush $io
 set processed "$tmpdir/[expr rand()].[clock seconds]"
+
 
 proc ReadFile {{dec ""}} {
     global io processed
@@ -84,8 +105,9 @@ proc ReadFile {{dec ""}} {
     OpenFile $processed
 }
 
+
 proc OpenFile {fname} {
-    global ma sel host port type
+    global ma sel host port type from replace
 
     if {$ma != ""} {
         set title "⊳$host:$port/$sel⊲"
@@ -94,13 +116,24 @@ proc OpenFile {fname} {
             set title "'$title'"
         }
 
+<<<<<<< HEAD
         exec ma -tag "[pwd]/+Gopher $title New Del Cut Paste Snarf Look Font Wrap | " \
             -post-eval "ReplaceText \"$fname\"" -post-eval "Electric; ToggleFont fix" &
         after 250
+=======
+        if {$replace && $from != ""} {
+            send $from UpdatePage "{$title}" "{$fname}"
+            after 250
+        } else {
+            exec ma -post-eval "UpdatePage \"$title\" \"$fname\"" &
+            after 250
+        }
+>>>>>>> felix
     } else {
         exec cat $fname >@ stdout
     }
 }
+
 
 proc SaveFile {prg} {
     global io processed
@@ -113,6 +146,7 @@ proc SaveFile {prg} {
     exec $prg $processed &
     after 250
 }
+
 
 proc DownloadFile {{conv ""}} {
     global io processed download_loc sel
@@ -133,13 +167,12 @@ proc DownloadFile {{conv ""}} {
     exec echo "downloaded file to $fname" | ma-eval
 }
 
+
 proc ProcessFile {} {
     global io processed
     set data [read $io]
     close $io
     set f [open $processed w]
-
-puts stderr $data
 
     foreach line [split $data "\n"] {
         if {[regexp "^(.)(\[^\t\]*)\t(\[^\t\]*)\t(\[^\t\]+)\t(\\d+).*" $line _ type \
@@ -180,9 +213,11 @@ puts stderr $data
     OpenFile $processed
 }
 
+
 switch -exact -- $type {
     g {SaveFile $image_viewer}
     p {SaveFile $image_viewer}
+    P {SaveFile $image_viewer}
     d {SaveFile $document_viewer}
     6 {DownloadFile uudecode}
     9 {DownloadFile}
@@ -194,4 +229,4 @@ switch -exact -- $type {
 }
 
 file delete $processed
-
+exit

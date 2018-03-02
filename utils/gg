@@ -1,2 +1,2 @@
 #!/bin/bash
-exec git grep -n "$@"
+exec git grep -nI "$@"

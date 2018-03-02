@@ -1,0 +1,23 @@
+#!/usr/bin/env wish
+#
+# git commit hook to update status view
+
+
+set root [pwd]
+
+while {![file exists $root/.git]} {
+  if {$root == "/"} {
+     error "not in git repository"
+     exit 1
+  }
+
+  set root [file dirname $root]
+}
+
+if {$root == ""} {
+   error "not in git repository"
+   exit 1
+}
+
+catch [list send $root/+Git Git_Update]
+exit
