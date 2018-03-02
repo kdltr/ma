@@ -14,9 +14,9 @@ set include_path {"/usr/include"}
 set current_font_size 12
 set tag_font_size $current_font_size
 set tag_font_style normal
-set current_fixed_font "Courier"
+set current_fixed_font "Source Code Pro"
 set fixed_font_size 12
-set current_variable_font "Helvetica"
+set current_variable_font "Source Code Pro"
 set variable_font_size 12
 set current_font $current_variable_font
 set current_font_style normal
