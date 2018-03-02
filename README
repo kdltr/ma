@@ -1,11 +1,15 @@
+                         
+88,dPYba,,adPYba,  ,adPPYYba,  
+88P'   "88"    "8a ""     `Y8  
+88      88      88 ,adPPPPP88  
+88      88      88 88,    ,88  
+88      88      88 `"8bbdP"Y8  
 
-  MA
-  ~~~
-
-MA is a minimalistic clone of the acme[1] editor used in Plan 9, and
-is written in Tcl/Tk. It has been tested with Tcl/Tk 8.5, mostly under
-Linux. MA has successfully been run on Mac OS X with XQuartz, but needs
-a tiling window manager to be used in a satisfactory way.
+     
+"ma" is a minimalistic clone of the acme[1] editor used in Plan 9,
+and is written in Tcl/Tk. It has been tested with Tcl/Tk 8.5, mostly
+under Linux. "ma" has successfully been run on Mac OS X with XQuartz,
+but needs a tiling window manager to be used in a satisfactory way.
 
 I used emacs[2] for years, but got bored with the ever growing number
 of extensions and key-combinations that one accumulates when intensively
@@ -24,26 +28,34 @@ Note that this editor is single-window based - it doesn't provide multiple
 windows, nor does it manage them in any way (this is delegated to the
 window manager.)
 
+
+
 Installation:
 
-Invoke "build" and put the files "ma", "ma-eval", "awd", "win", "pty"
-and "B" in your PATH.
+Invoke 
+
+  ./build 
+
+and put the files "ma", "awd", "win", "pty", "plumb"
+and "B" in your PATH and ".plumb" into your $HOME.
+
 
 Usage:
 
-MA works basically like Acme, but does no own window-management.
+"ma" works basically like Acme, but does no own window-management.
 Configuration is done in the file "~/.ma", holding Tcl code to modify
-fonts, colors, etc.  A number of command-line options can be provided to
-set various of these options and to run MA in special modes, or comunicate
-with the "registry", a MA instance that allows locating files that are
-already open.
+fonts, colors, etc.  A number of command-line options can be provided
+to set various of these options and to run "ma" in special modes, or
+comunicate with the "registry", a "ma" instance that allows locating
+files that are already open.
+
 
 To start the registry, run
 
   ma -registry &
 
 The registry is implemented using the Tk "send" command, so X-forwarding
-must be disabled (enter "xhost" to see wether this is the case). MA
+must be disabled (enter "xhost" to see wether this is the case). "ma"
 should still run, but features related to the registry will not be
 available in this case (locating already open windows, and "Putall".)
 
@@ -52,15 +64,14 @@ an address) and opens the given files or activates already open windows
 holding these files.
 
 "pty" is a generic program running a subprocess in a pseudo terminal and
-is used by "win" to have interactive windows inside a MA instance. Note
+is used by "win" to have interactive windows inside a "ma" instance. Note
 that this is currently very crude and does not support escape codes of
 any kind.
 
-"ma-eval" can be used to evaluate Tcl code in a running MA instance,
+"ma-eval" can be used to evaluate Tcl code in a running "ma" instance,
 "awd" sets the label of the window in which the command is executed. You
 can create an alias for "cd" to set the label automatically when used
 inside an interactive shell window:
-
 
 alias cd="_cd"
 
@@ -77,40 +88,49 @@ another window will then perform the execution in the context of the
 focus window. Execution in the tag of a window always has that window
 as context, regardless of focus.
 
+When you create a new, unnamed window and want to save it, then just
+edit the filename (initially "<unnamed>"). Also saving the file under a
+different name can be done the same way.
+
+The "plumb" program performs a very simple Plan-9 like "plumbing" based
+on regular expressions, see ".plumb" for some examples on how to define
+rules, which consists of Tcl code associated to regular expressions.
+"plumb" takes a string as argument and runs the plumbing rules
+in "~/.plumb" until a rule matches and succeeds. Text sweeped or
+clicked with B3 will invoke "plumb" with the string as argument.
+
+
 Environment variables:
 
 MA_HISTORY
-    If set, all code that is executed in "win" mode or via B2 is logged in the file given in
-    this variable (this includes all input, including passwords!)
+    If set, all code that is executed in "win" mode or via B2 is logged in
+    the file given in this variable (this includes all input, including
+    passwords!)
 
-MA_INCLUDE_PATH
-    Lists additional include-directories, separated by ":" (default: "/usr/include")
+C_INCLUDE_PATH
+    Lists additional include-directories, separated by ":" (default:
+    "/usr/include")
 
 SHELL
     Shell to use for executing commands (default: "bash")
 
 MA
-    Set to the name of the wish(1) instance when executing external programs.
+    Set to the name of the wish(1) instance when executing external
+    programs.
+
 
 Extending:
 
-Use "DefineCommand REGEX EXPR" to define Tcl code to be executed when the
-command given in REGEX is executed, i.e.
+Use "DefineCommand REGEX EXPR" to define Tcl code to be executed when
+the command given in REGEX is executed, i.e.
 
     DefineCommand {^MyCommand\s+(.+)$} { ... }
 
 Arguments (subpatterns in the regex) can be extracted with "GetArg".
 
-"DefinePlumbing REGEX EXPR" adds plumbing rules, where EXPR should return
-1 if the rule matches or 0 if not (and another rule should be tried).
 
-The "ma-eval" shell command simple sends code to be evaluated by the MA instance
-given in the first argument, subprocesses can access the instance name using the
-$MA environment variable.
-
-
-MA is not finished, and probably never will. For more information, consult the 
-source code or contact me[3]. 
+"ma" is not finished, and probably never will. For more information,
+consult the source code or contact me[3].
 
 
 To do:
@@ -126,14 +146,7 @@ To do:
   a terminated instance are not recovered
 - (bug) the (pseudo-)selection is sometimes retained even after input
 - (bug) MA_LABEL isn't always set
-
-Possible extensions:
-
-- dumping window state (tag + body) to file, and restore, possibly
-  combined with auto-dumping, where ma in registry mode could restore
-  all auto-dumped files from a given directory.
-- optional mode to save configuration for saved files, to be reloaded when the
-   file is opened again
+- rename InvokeExternalCommandInWindow to something better
 
 Shortcomings:
 
@@ -166,15 +179,19 @@ Shortcomings:
    mouse or cursor-movement keys
 - "Putall" is implemented, but will save all files in all open windows, even on
   virtual screens not currently visible
+- there is no "Edit" command
 
 Unclear:
 
 - use file-registry for locating +Errors windows, instead of custom appname?
    (but that requires registry to be running)
+- make plumbing completely external, associate regexen to shell scripts by 
+  external command
+- provide command-line interface to access internals, similar to [5]
 
 Differences to acme(1):
 
-- Tab does not insert "\t", for religious reasons
+- Tab does not insert "\t" but whitespace
 - (obviously) single-window mode
 - no dynamic update of undo/redo commands tag (except filename)
 - auto-chmod when saving file beginning with "#!/"
@@ -197,23 +214,40 @@ Differences to acme(1):
 - B3-search is case-insensitive, search with "Look" is not
 - "//.../" address disables most regex syntax (used for ctags)
 - Various emacsish keyboad sequences, as provided by the Tk text widget
-- Additional commands: "Anchor", "Withdraw", "Tcl", "Crnl", "Replace", "Wrap", "Back"
+- Additional commands: "Anchor", "Withdraw", "Tcl", "Crnl", "Replace", "Back"
 - MA supports paren-matching
 - Shift-B3 is equivalent to B2
 - Acquiring an existing window doesn't warp mouse to current selection
-
+- B2 on a directory opens the "directory editor"
 
 All of MA's source code is hereby placed in the public domain
-
 
 Acknowledgements:
 
     Thanks to:
 
         Lucas Sköldqvist for various tips and suggestions.
-        Kooda for fixing my completely broken implementation of pty.c
+        Kooda for fixing the completely broken implementation of pty.c
 
 Version history:
+
+6
+
+    - C-k on end of line just deletes the newline and doesn't overwrite the cut buffer.
+    - On-demand update of tag for "Put", "Back".
+    - added read and write hooks.
+    - "Look" doesn't warp mouse pointer.
+    - All MA windows that are not directory listings or output windows track "dirty" state.
+    - "Put <name>" always saves, regardless of the type of window.
+    - Dotfiles command for directories.
+    - Added several hooks for integrating the directory editor (diredit.tcl).
+    - New files have a default name ("<unnamed>").
+    - Removed tag marker, "dirty" state is indicated by tag font style (italic).
+    - Double-B1 on empty line does not highlight line.
+    - Extracted plumbing into separate tool ("plumb").
+    - If the label is changed and the file does not exist yet, save text even if unmodified.
+    - Removed "Wrap" and default to char-wrapping.
+    - Renaming and saving output window properly reregisters the window.
 
 5
 
@@ -280,3 +314,4 @@ Version history:
 [2] https://www.gnu.org/software/emacs/
 [3] felix@call-with-current-continuation.org
 [4] http://www.cs.yorku.ca/~oz/wily/
+[5] http://www.cs.yorku.ca/~oz/wily/python.html
