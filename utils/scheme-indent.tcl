@@ -9,7 +9,8 @@ set block_forms {
     lambda  append-map match match-let match-let\* match-lambda
     with-\* handle-exceptions begin fluid-let match-lambda\*
     match-letrec define(-[a-z0-9]+)? receive syntax-rules
-    er-macro-transformer ir-macro-transformer
+    er-macro-transformer ir-macro-transformer bitmatch bitconstruct
+    bitpacket dotimes
 }
 
 set control_forms {
@@ -97,6 +98,7 @@ proc SchemeIndentLine {} {
 
     regexp {^\d+\.(\d+)$} $front _ col
     set len [string length $head]
+    # set nhead [string map { "        " "\t" } [string repeat " " [expr $col + $tab]]]
     set nhead [string repeat " " [expr $col + $tab]]
     .t replace "insert linestart" "insert linestart + $len chars" $nhead
 }

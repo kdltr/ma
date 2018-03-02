@@ -10,13 +10,13 @@ proc Acme {} {
     global pseudo_selection_background inactive_selection_background
 
     set current_foreground black
-    set current_background "#FFFFD8"
+    set current_background "#FFFFEA"
     set sbar_color $current_background
     set sbar_background "#99994C"
     set tag_foreground black
-    set tag_background "#D8FFFF"
+    set tag_background "#EAFFFF"
     set selection_foreground black
-    set selection_background "#bbbb4c"
+    set selection_background "#eeee9e"
     set pseudo_selection_foreground $selection_foreground
     set pseudo_selection_background $selection_background
     set inactive_selection_background $selection_background

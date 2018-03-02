@@ -1,18 +1,18 @@
-set current_fixed_font "Liberation Mono"
-set current_variable_font "Liberation Sans"
-set current_font $current_variable_font
+set current_fixed_font "Source Code Pro"
+set current_variable_font "Source Code Pro"
+#set current_font $current_variable_font
 
-set browser "chromium"
+set browser "x-www-browser"
 set image_viewer "sxiv"
-set pdf_viewer "mupdf-x11"
+set pdf_viewer "mupdf"
 
 
 ## File hooks
 
-source ~/code/ma/utils/hooks.tcl
+source /my/library/code/ma/utils/hooks.tcl
 
 proc SchemeFileHook {} {
-    uplevel #0 { source ~/code/ma/utils/scheme-indent.tcl }
+    uplevel #0 { source /my/library/code/ma/utils/scheme-indent.tcl }
     SchemeIndent
     ToggleFont fix
 }
@@ -24,13 +24,13 @@ AddFileHook {\.(setup|egg)$} {SchemeFileHook; .tag insert "1.0 lineend" " chicke
 set theme_counter 1
 foreach x "acme autumn-light blue-sea crisp electric faff
                    glowfish goldenrod relaxed solarized subatomic zenburn" {
-    source ~/code/ma/utils/colors/$x.tcl
+    source /my/library/code/ma/utils/colors/$x.tcl
 }
 
 
 ## Plumbing rules
 
-source ~/code/ma/utils/gopher.tcl
+source /my/library/code/ma/utils/gopher.tcl
 
 DefinePlumbing {^(.+)(.png|.jpg|.jpeg|.gif)} {
     set fname [CanonicalFilename [GetArg 0]]
