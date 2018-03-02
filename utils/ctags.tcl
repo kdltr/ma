@@ -13,7 +13,7 @@ proc LoadTags {} {
     if {$tagfile == ""} {
         if {[file exists "tags"]} {
             set tagfile [file normalize "tags"]
-        }
+        } else return
     }
 
     if {$tagfiletime == 0 || [file mtime $tagfile] > $tagfiletime} {
@@ -22,8 +22,7 @@ proc LoadTags {} {
         while {[gets $f line] >= 0} {
             if {[regexp {^(\S+)\s+(\S+)\s+(\d+)$} $line _ name file ln]} {
                 set tagmap($name) [list $file $ln]
-            } elseif {[regexp {^(\S+)\s+(\S+)\s+/(\^?)(.+)(\$)?/$} $line _ name \
-                file c str d]} {
+            } elseif {[regexp {^(\S+)\s+(\S+)\s+/(\^?)([^$/]+)(\$)?/$} $line _ name file c str d]} {
                 set tagmap($name) [list $file "//$c$str$d/"]
                 # puts "$name:$tagmap($name)"
             }

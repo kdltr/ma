@@ -53,6 +53,12 @@ proc MarkAt {{addr "."}} {
 }
 
 
+proc Unmark {} {
+    .t tag remove mark 1.0 end
+}
+
+
 DefineCommand {^Mark\s+([^:].+)$} {MarkRegexp [GetArg]}
 DefineCommand {^Mark\s+:(.+)$} {MarkAt [GetArg]}
 DefineCommand {^Mark$} MarkAt
+DefineCommand {^Unmark$} Unmark

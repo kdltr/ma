@@ -8,8 +8,9 @@ set block_forms {
     with-input-from-file with-output-to-file call-with-values and-let\*
     call-with-current-continuation lambda call-with-input-file append-map
     call-with-output-file match match-let match-let\* match-lambda
-    with-output-to-port handle-exceptions begin fluid-let
+    with-output-to-port handle-exceptions begin fluid-let parameterize
     match-lambda\* match-letrec define(-[a-z0-9]+)? receive syntax-rules
+    er-macro-transformer ir-macro-transformer condition-case
 }
 
 set control_forms {

@@ -1,64 +1,47 @@
 # gopher links and search
-#
-# Patterns: ⊳...⊲
-#           gopher://...
 
+set gopher_history $env(HOME)/.gopher_history
 
-DefinePlumbing {^⊳([^:=/?]+)(:(\d+))?(=(.))?(/(.*))?⊲$} {
-    global exec_prefix browser
-    set host [GetArg 1]
-    set port 70
-    set type 1
-    set sel [GetArg 7]
-
-    if {[GetArg 2] != ""} {set port [GetArg 3]}
-
-    if {[GetArg 4] != ""} {set type [GetArg 5]}
-
-    if {[regexp {^URL:(.+)$} $sel _ url]} {
-        Flash blue
-        exec $browser $url & 
+proc GopherExecute {cmd ctxt} {
+    if {[regexp {^⊳([^⊲]+)⊲$} $cmd]} {
+        Plumb $cmd -a replace=1
         return 1
     }
 
-    exec ${exec_prefix}gopher -type $type $sel $host $port &
-    return 1
+    return ""
+}
+
+AddToHook execute_hook GopherExecute
+
+DefineCommand {^History$} {
+    global gopher_history
+    Ma $gopher_history -post-eval ReverseLines
 }
 
 
-DefinePlumbing {^gopher://([^/:]+)(:(\d+))?(/(.))?(.*)?$} {
-    global exec_prefix
-    set host [GetArg 1]
-    set type 1
-    set port 70
-    set sel [GetArg 6]
+proc UpdatePage {title fname} {
+    lassign [DeconsTag] old cmds rest
+    MakeTag "[pwd]/+Gopher" $cmds " $title"
+    Acme
+    ReplaceText $fname
+    UpdateCommand "History"
+    ToggleFont fix
+}
 
-    if {[GetArg 4] != ""} {
-        set type [GetArg 5]
 
-        if {$type == "/"} {
-            set sel "/$sel"
-            set type 1
+proc ReverseLines {} {
+    set txt [.t get 1.0 end]
+    .t delete 1.0 end
+    set prev ""
+    
+    foreach ln [lreverse [split $txt "\n"]] {
+        if {$ln != "" && $ln != $prev} {
+            .t insert end "$ln\n"
+            set prev $ln
         }
     }
 
-    if {[GetArg 2] != ""} {set port [GetArg 3]}
-
-    exec ${exec_prefix}gopher -type $type $sel $host $port &
-    return 1
-}
-
-
-# search
-DefinePlumbing {^⊳([^:=/?]+)(:(\d+))?\?([^?]+)\?(.*)⊲$} {
-    global exec_prefix
-    set host [GetArg 1]
-    set port 70
-    set sel [GetArg 4]
-    set str [GetArg 5]
-
-    if {[GetArg 2] != ""} {set port [GetArg 3]}
-
-    exec ${exec_prefix}gopher "$sel\t$str" $host $port &
-    return 1
+    Unmodified
+    .t mark set insert 1.0
+    .t see 1.0
 }

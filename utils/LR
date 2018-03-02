@@ -1,0 +1,27 @@
+#!/usr/bin/env tclsh
+#
+# line-wise replace
+
+fconfigure stdout -translation lf
+fconfigure stderr -translation lf
+set opts {}
+
+proc Usage {{code 1}} {
+  puts stderr {usage: LR [-a] REGEXP [SUBST]}
+  exit $code 
+}
+
+if {[lassign $argv from to to2] != ""} Usage
+
+if {$from == "-a"} {
+    set opts {-all}
+    set from $to
+    set to $to2
+} elseif {$to2 != ""} Usage
+
+if {$from == ""} Usage
+
+while {[gets stdin line] >= 0} {
+  puts [regsub {*}$opts -- $from $line $to]
+}
+

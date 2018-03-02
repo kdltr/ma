@@ -12,7 +12,7 @@ if {$argc > 0} {
 
 if {[regexp {unquote$} $argv0]} {
     while {[gets stdin line] >= 0} {
-        if {[regexp {^>(\s)?} $line _ sp]} {
+        if {[regexp "^$qchar\(\\s\)?" $line _ sp]} {
             if {$sp != ""} {
                 puts [string range $line 2 end]
             } else {
