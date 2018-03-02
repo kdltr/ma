@@ -7,9 +7,14 @@ fconfigure stdout -translation lf
 fconfigure stderr -translation lf
 
 set exec_prefix ""
+set tmpdir "/tmp"
 
 if {[info exists env(HERE)]} {
     set exec_prefix $env(HERE)/exec/
+}
+
+if {[info exists env(TMPDIR)]} {
+    set tmpdir $env(TMPDIR)
 }
 
 set async ""
@@ -36,14 +41,17 @@ if {$id == ""} {
     set dname "$dir/+Errors"
 
     if {[catch [list send $dname #]]} {
-        exec ${exec_prefix}ma -name $dname -tag \
+        exec ${exec_prefix}ma -name $dname -temporary -tag \
             "$dir/+Errors New Del Cut Paste Snarf Send Look Font Wrap Scroll | " &
-        after 500
+        after 100
     }
 
-    set data [read stdin]
-    send $dname Append "{$data}"
-    send -async $dname AppendLine $eot_symbol
+    set tmpfile $tmpdir/temp-[pid].[expr rand()]
+    set tmp [open $tmpfile w]
+    fcopy stdin $tmp
+    close $tmp 
+    send $dname AppendFile $tmpfile
+    file delete $tmpfile
     exit
 }
 

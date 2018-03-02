@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e -x
 
@@ -6,7 +6,7 @@ libs=-lrt
 
 case `uname -s` in
   Darwin)
-	libs=
+    libs=
 esac
 
 gcc -std=gnu99 pty.c -o pty -lutil $libs

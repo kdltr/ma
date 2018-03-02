@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 label="$1"
 execp=

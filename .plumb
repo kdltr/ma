@@ -1,0 +1,67 @@
+# default plumbing rules
+#
+# rules are tried in the order given, return 0 if the rule should be
+# skipped.
+#
+# Now, customize!
+
+
+set browser firefox
+
+# <URL>
+Plumb {^(http|https|ftp)://[-A-Za-z0-9_.+%/&?=#~:]+$} { 
+    global browser
+    Run $browser [GetArg 0] 
+    return 1
+}
+
+# "..." / "<...>" (include file)
+
+set include_path {"/usr/include"}
+
+if {[info exists env(C_INCLUDE_PATH)]} {
+    set include_path [concat $include_path [split $env(C_INCLUDE_PATH) ":"]]
+}
+
+proc FindInPath {fname path} {
+    set found {}
+
+    foreach x $path {
+        set fn [file join $x $fname]
+    
+        if {[file exists $fn]} {
+            lappend found $fn
+        }
+    }
+
+    return $found
+}
+
+proc GotoIncludeFile {fname} {
+    global include_path
+    set found [FindInPath $fname $include_path]
+
+    if {$found != ""} {
+        Run B [lindex $found 0]
+        return 1
+    }
+
+    return 0
+}
+
+Plumb {^"([^"]+)"$} {return [GotoIncludeFile [GetArg]]}
+Plumb {^<([^>]+)>$} {return [GotoIncludeFile [GetArg]]}
+
+# <manpage>(<n>)
+Plumb {^(\S+)\((\d+)\)$} {
+    exec man [GetArg 2] [GetArg 1] | ma-eval &
+    return 1
+}
+
+# <file>:[<addr>]
+Plumb {^([^:]+):((\d+|//?[^/]+/?|\?[^?]+\??|\$|#\d+|\.)(,(\d+|/[^/]+/?|\?[^?]+\??|\$|#\d+|\.))?)} {
+    Run B [GetArg 1]:[GetArg 2]
+    return 1
+}
+
+Plumb {^([^:]+):} {Run B [GetArg 1]; return 1}
