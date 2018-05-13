@@ -4,24 +4,34 @@
 
 fconfigure stdout -translation lf
 fconfigure stderr -translation lf
-set opts {}
+set opts {-all}
+set rx {}
+set subst {}
 
 proc Usage {{code 1}} {
-  puts stderr {usage: LR [-a] REGEXP [SUBST]}
+  puts stderr {usage: LR [-h] [-1] REGEXP [SUBST]}
   exit $code 
 }
 
-if {[lassign $argv from to to2] != ""} Usage
+for {set i 0} {$i < $argc} {incr i} {
+    set arg [lindex $argv $i]
 
-if {$from == "-a"} {
-    set opts {-all}
-    set from $to
-    set to $to2
-} elseif {$to2 != ""} Usage
-
-if {$from == ""} Usage
+    switch -regexp -- $arg {
+        {^--?h(elp)?$} {Usage 0}
+        {^-1$} {set opts {}}
+        default {
+            if {$rx == ""} {
+                set rx $arg
+            } elseif {$subst != ""} {
+                Usage
+            } else {
+                set subst $arg
+            }
+        }
+    }
+}
 
 while {[gets stdin line] >= 0} {
-  puts [regsub {*}$opts -- $from $line $to]
+  puts [regsub {*}$opts -- $rx $line $subst]
 }
 

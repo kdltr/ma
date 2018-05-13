@@ -1,9 +1,9 @@
 #!/usr/bin/env wish
-#### ma - a minimal variant of acme(1)
+#### ma - a minimalistic variant of acme(1)
 #
-# (c)MMXV-MMXVII Felix L. Winkelmann
+# (c)MMXV-MMXVIII Felix L. Winkelmann
 #
-# Version: 6
+# Version: 8
 
 
 # customize these variables to your taste:
@@ -12,12 +12,11 @@ set plumber "plumb"
 set exec_path [split $env(PATH) ":"]
 set include_path {"/usr/include"}
 set current_font_size 12
+set directory_font_size $current_font_size
 set tag_font_size $current_font_size
 set tag_font_style normal
 set current_fixed_font "Source Code Pro"
-set fixed_font_size 12
 set current_variable_font "Source Code Pro"
-set variable_font_size 12
 set current_font $current_variable_font
 set current_font_style normal
 set password_char "∎"
@@ -48,7 +47,11 @@ set indent_mode 0
 set current_translation lf
 set eot_symbol "␄"
 set directory_commands {Dotfiles}
-set initial_tag "<unnamed> New Del Cut Paste Snarf Get Look Font | "
+set unnamed_name UNNAMED
+set initial_tag "$unnamed_name New Del Cut Paste Snarf Get Look Font | "
+set interactive_shell_args {}
+set tag_dirty_font_style italic
+set tag_clean_font_style normal
 
 
 # global variables
@@ -66,7 +69,8 @@ set b2_with_arg ""
 set b2_abort 0
 set b3_down 0
 set b3_start ""
-set shell "bash"
+set b3_abort 0
+set shell sh
 set win_mode 0
 set win_file ""
 set flashed_range_id ""
@@ -84,10 +88,13 @@ set password_input ""
 set cut_unmodified ""
 set position_stack {}
 set editable 1
-set direditing 0
 set dotfiles 1
 set override_attempt 0
 set unnamed 0
+set replace_dir 0
+set pseudosel_on(.t) 0
+set pseudosel_on(.tag) 0
+set last_scroll_bottom 1.0
 
 set file_hook {}
 set name_hook {}
@@ -147,8 +154,7 @@ set command_table {
         set indent_mode [expr !$indent_mode]
         Flash blue 
     }}
-    {{^Replace\s+(.+)$} { Replace [GetArg] }}
-    {{^Kill$} { KillExecuting 1 }}
+    {{^Kill$} { KillExecuting SIGKILL 1}}
     {{^Send$} SendToProcess}
     {{^Send\s+(\S.*)$} {SendToProcess [GetArg]}}
     {{^Tab$} { global tabwidth; LogInWindow "Tab width is $tabwidth\n" }}
@@ -165,6 +171,11 @@ set command_table {
     {{^Dotfiles$} {global dotfiles; set dotfiles [expr !$dotfiles]; RevertFile}}
     {{^Putall$} {SaveAllModified 0}}
     {{^Back$} PopMoveInsert}
+    {{^Local$} {
+        global replace_dir
+        set replace_dir [expr !$replace_dir]
+        Flash blue
+    }}
     {{^Crnl$} {
         global current_translation
         set current_translation "crnl"
@@ -220,7 +231,6 @@ proc StartRegistry {} {
     }
 
     tk appname MA-registry
-    UpdateCommand Withdraw
     set withdrawn 1
 }
 
@@ -261,7 +271,7 @@ proc DropFocus {} {
 
 proc Locate {fname {addr ""}} {
     global app_registry fname_registry
-    set fname [CanonicalFilename $fname]
+    set fname [CanonicalFilename [FollowLink $fname]]
     
     if {[info exists app_registry($fname)]} {
         set id $app_registry($fname)
@@ -310,6 +320,7 @@ proc SaveChanges {} {
 proc ActivateWindow {} {
     .t see insert
     WarpToIndex .t insert
+    RefreshDirectory
     Flash blue
 }
 
@@ -355,6 +366,7 @@ proc Ma {args} {
 
 
 proc GotoFileAddress {fname {addr ""}} {
+    global replace_dir
     set addr [string trim $addr]
 
     if {![regexp {^/} $fname]} {
@@ -363,8 +375,12 @@ proc GotoFileAddress {fname {addr ""}} {
     } 
 
     if {[file exists $fname]} {
-        if {[catch [list send MA-registry Locate $fname "{$addr}"] result] || $result == ""} {
-             Ma $fname -address $addr
+        if {[catch [list send MA-registry Locate "{$fname}" "{$addr}"] result] || $result == ""} {
+            if {$replace_dir && [file type $fname] == "directory"} {
+                OpenDirectory $fname
+            } else {
+                 Ma $fname -address $addr
+            }
         }
 
         return 1
@@ -585,16 +601,14 @@ proc InsertAnchor {} {
 
 proc ToggleFont {{mode ""}} {
     global current_font current_fixed_font current_variable_font
-    global current_font_size fixed_font_size variable_font_size
+    global current_font_size
    
     switch $mode {
         fix {
             set current_font $current_fixed_font
-            set current_font_size $fixed_font_size
         }
         var {
             set current_font $current_variable_font
-            set current_font_size $variable_font_size
         }
         default {
             if {$current_font == $current_fixed_font} {
@@ -604,7 +618,8 @@ proc ToggleFont {{mode ""}} {
             }
         }
     }
-    ResizeFont 0
+    # just for reconfiguration
+    ResizeFont $current_font_size
 }
 
 
@@ -672,11 +687,12 @@ proc Unmodified {} {
 
 proc MarkDirty {on} {
     global tag_font_size tag_font_style current_variable_font
+    global tag_dirty_font_style tag_clean_font_style
 
     if {$on} {
-        set tag_font_style italic
+        set tag_font_style $tag_dirty_font_style
     } else {
-        set tag_font_style normal
+        set tag_font_style $tag_clean_font_style
     }
 
     .tag configure -font [list $current_variable_font $tag_font_size \
@@ -716,6 +732,10 @@ proc DeconsTag {} {
         return [list $fname $cmds $rest]
     }
 
+    if {[regexp {^\s*"([^"]*)"\s*([^|]*)\|(.*)$} $text _ fname cmds rest]} {
+        return [list $fname $cmds $rest]
+    }
+
     if {[regexp {^([^ ]+)\s+([^|]*)\|(.*)$} $text _ fname cmds rest]} {
         return [list $fname $cmds $rest]
     } 
@@ -733,7 +753,11 @@ proc MakeTag {fname {c ""} {r ""}} {
     .tag delete 1.0 end
 
     if {[regexp {\s} $fname]} {
-        set fname2 "'$fname'"
+        if {[string first "'" $fname] != -1} {
+            set fname2 "\"$fname\""
+        } else {
+            set fname2 "'$fname'"
+        }
     } else {
         set fname2 $fname
     }
@@ -768,9 +792,22 @@ proc UpdateCommand {new {old ""}} {
 }
 
 
+proc GetTag {} {return [.tag get 1.0 end]}
+proc GetBody {} {return [.t get 1.0 end]}
+ 
+
 proc SetTag {text} {
     .tag delete 1.0 end
     .tag insert 1.0 $text
+}
+
+
+proc SetLabel {str} {MakeTag $str}
+
+
+proc GetLabel {} {
+    lassign [DeconsTag] label
+    return $label
 }
 
 
@@ -803,20 +840,21 @@ proc UpdateTag {{fname ""}} {
 
     # if this was an output window, reregister under a new name
     if {[regexp $output_window_rx $aname]} {
-        catch [list send MA-registry Unregister $aname]
+        catch [list send MA-registry Unregister "$aname"]
         tk appname MA-[pid]
         set editable 1
     }
 
-    catch [list send -async MA-registry Register $aname $fname]
+    catch [list send -async MA-registry Register $aname "{$fname}"]
 }
 
 
 proc GetFilename {} {
     global current_filename output_window_rx unnamed
+    global unnamed_name
     lassign [DeconsTag] name
 
-    if {$name == "<unnamed>"} {
+    if {$name == $unnamed_name} {
         set unnamed 1
         return ""
     }
@@ -861,13 +899,12 @@ proc OpenFile {name {replace 1}} {
         set t [file type [FollowLink $name]]
 
         if {[file type $name] == "file"} {
-            Flash green
             set last_opened [list $name [file mtime $name]]
             lassign [ReadFile $name] text tr
             UpdateTag $name
             
             if {$replace} {
-                SetText $text
+                SetBody $text
                 .t mark set insert 1.0
                 .t see insert
             } else {
@@ -889,54 +926,68 @@ proc OpenFile {name {replace 1}} {
 }
 
 
-proc ReplaceText {fname} {
+proc ReplaceFile {fname} {
     global current_translation position_stack
     lassign [ReadFile $fname] text tr
-    SetText $text
+    SetBody $text
     .t mark set insert 1.0
     .t see insert
-    set position_stack {}
     Unmodified
 }
 
 
-proc SetText {text {addr ""}} {
-    if {$addr == ""} {
-        set from 1.0
-        set to end
-    } else {
-        lassign [AddrIndices $addr] from to
+proc SetBody {text} {
+    global position_stack
+    .t delete 1.0 end
+    .t insert 1.0 $text
+    set position_stack {}
+    set ip "end - 1 chars"
 
-        if {$to == ""} {set to end}
-    }
+    if {$text == ""} {set ip end}
 
-    .t delete $from $to
-    .t insert $from $text
+    .t mark set win_insert_point $ip
 }
 
 
-# for "ma-eval"
+proc SetDot {addr} {
+    lassign [AddrIndices $addr] from to
+    RemoveSelection
+    .t tag add sel $from $to
+}
+
+
+proc GetDot {} {
+    set range [.t tag ranges sel]
+
+    if {$range == ""} {
+        return "#[.t count -chars 1.0 insert]"
+    }
+
+    set p1 [.t count -chars 1.0 [lindex $range 0]]
+    set p2 [.t count -chars 1.0 [lindex $range 1]]
+    return "#$p1,#$p2"
+}
+
+
 proc AppendFile {fname} {
-    global eot_symbol
+    global scroll eot_symbol last_scroll_bottom
     set f [open $fname]
+    set p [.t index end]
     Append [read $f]
     close $f
     Append "$eot_symbol\n"
+
+    if {!$scroll} {
+        .t yview [expr max(0.0, $p - 1)]
+        set last_scroll_bottom [.t index end]
+    }
 }
 
 
-# not used here, only for "ma-eval"
-proc GetText {{addr ""}} {
-    if {$addr == ""} {
-        set from 1.0
-        set to end
-    } else {
-        lassign [AddrIndices $addr] from to
-
-        if {$to == ""} {set to end}
-    }
-
-    return [.t get $from $to]
+proc InsertFile {fname} {
+    set f [open $fname]
+    Insert [read $f]
+    close $f
 }
 
 
@@ -1024,9 +1075,8 @@ proc FormatColumnar {list} {
 
 proc OpenDirectory {name} { 
     global current_translation position_stack editable dotfiles
-    global directory_commands
+    global directory_commands directory_font_size current_font_size
     set name [file normalize $name]
-    Flash green
 
     if {[catch [list glob -tails -directory $name *] files]} {
         set files {}
@@ -1050,12 +1100,14 @@ proc OpenDirectory {name} {
         }
     }
 
+    update
     set text [FormatColumnar $nfiles]
     UpdateTag "$name/"
-    SetText $text
+    SetBody $text
     .t mark set insert 1.0
     set position_stack {}
     Top
+    set current_font_size $directory_font_size
     ToggleFont fix
     set current_translation lf
     Unmodified
@@ -1195,7 +1247,7 @@ proc Insert {text {tags ""}} {
 
 
 proc Append {text {sel 0}} {
-    global win_mode scroll
+    global win_mode
     DeiconifyWindow
     set p1 [.t index "end - 1 chars"]
     .t insert end $text
@@ -1244,17 +1296,11 @@ proc ConfirmModified {} {
 
 
 proc Terminate {{force 0}} {
-    global executing_pids current_filename last_del_attempt win_mode
+    global current_filename last_del_attempt win_mode
 
     if {!$force && [CheckIfModified]} { 
         if {[ConfirmModified]} return
     }
-
-#   not sure about this:
-#
-#    foreach pid $executing_pids {
-#        catch [list exec kill -9 $pid]
-#    }
 
     catch [list send -async MA-registry Unregister [tk appname]]
     RunHook termination_hook
@@ -1262,12 +1308,9 @@ proc Terminate {{force 0}} {
 }
 
 
-proc ResizeFont {inc} {
+proc ResizeFont {val} {
     global current_font_size current_font current_font_style
-    global fixed_font_size variable_font_size
-    set current_font_size [expr $current_font_size + $inc]
-    set fixed_font_size [expr $fixed_font_size + $inc]
-    set variable_font_size [expr $variable_font_size + $inc]
+    set current_font_size $val
     .t configure -font [list $current_font $current_font_size $current_font_style]
     RunHook configuration_hook
 }
@@ -1277,7 +1320,7 @@ proc ConfigureWindow {{runhook 1}} {
     global current_background current_foreground current_font 
     global current_variable_font current_font_size current_font_style
     global tag_foreground tag_background selection_foreground 
-    global selection_background tag_font_style
+    global selection_background tag_font_style sbar_width
     global sbar_color sbar sbar_background b2sweep_foreground 
     global b2sweep_background 
     global b3sweep_foreground b3sweep_background pseudo_selection_foreground 
@@ -1309,7 +1352,7 @@ proc ConfigureWindow {{runhook 1}} {
         -relief ridge -borderwidth 1 -highlightthickness 0 \
         -insertofftime 0 -insertwidth 3 -wrap char -cursor arrow
     .s configure -background $sbar_background -relief ridge -borderwidth 1 \
-        -highlightthickness 0
+        -highlightthickness 0 -width $sbar_width
     .s itemconfigure $sbar -fill $sbar_color -width 0 -stipple ""
     .t tag configure pseudosel -foreground $pseudo_selection_foreground -background $pseudo_selection_background
     .tag tag configure pseudosel -foreground $pseudo_selection_foreground -background $pseudo_selection_background
@@ -1348,9 +1391,10 @@ proc DoRunCommand {cmd {inputfile ""}} {
 
 proc RunExternalCommand {cmd {inputfile ""} {sender ""} {sender_label ""}} {
     global executing_pids command_input_file env scroll 
+    global last_scroll_bottom
 
     if {!$scroll} {
-        Bottom
+        set last_scroll_bottom [.t index end]
     }
 
     if {$sender != ""} {
@@ -1360,6 +1404,7 @@ proc RunExternalCommand {cmd {inputfile ""} {sender ""} {sender_label ""}} {
 
     if {[catch [list DoRunCommand $cmd $inputfile] input]} {
         Append "\nCommand failed: $input\n"
+        Bottom
 
         if {$command_input_file != ""} {
             file delete -force $command_input_file
@@ -1382,7 +1427,7 @@ proc RecordPosition {} {
 
 proc LogOutput {input} {
     global current_background command_input_file eot_symbol executing_pids 
-    global any_output win_mode
+    global any_output win_mode scroll last_scroll_bottom
     set data [read $input]
     set blocked [fblocked $input]
 
@@ -1390,31 +1435,28 @@ proc LogOutput {input} {
         DeiconifyWindow
         set any_output 1
         set endpos [.t index "end - 1 chars"]
-
-        # recognize + remove "bell" character
-        if {[regexp "\x07" $data]} {
-            Flash white
-            regsub -all "\x07" $data "" data
-        }
-
         Append "$data"
         
         if {$win_mode} {
             .t mark set win_insert_point "end - 1 chars"
             .t mark gravity win_insert_point left
         }
+
+        if {!$scroll} {
+            .t yview [expr max(1.0, $last_scroll_bottom - 1.0)]
+        }
     } elseif {!$blocked} {
         set pid [pid $input]
 
         if {[catch [list close $input] result]} {
             Append "\nCommand failed: $result"
+            Bottom
             set any_output 1
         } else {
             Append "$eot_symbol\n"
         }
 
-        set i [lsearch -exact $pid $executing_pids]
-        set executing_pids [lreplace $executing_pids $i $i] 
+        DropExecutingPid $pid
 
         if {$command_input_file != ""} {
            file delete -force $command_input_file
@@ -1472,7 +1514,7 @@ proc Plumb {str args} {
         }
     }
 
-    if {[catch [list exec ${exec_prefix}$plumber $str {*}$args]]} {
+    if {[catch [list exec sh -c "${exec_prefix}$plumber \"$str\" $args"] result]} {
         return 0
     }
 
@@ -1550,7 +1592,8 @@ proc Search {{str ""} {start ""} {case 0} {warp 1}} {
 
     if {$start == ""} {
         if {$range != ""} {
-            set start "[lindex $range 0] + 1 chars"
+            set p1 [lindex $range 0]
+            set start "$p1 + 1 chars"
         } else {
             set start "insert + 1 chars"
         }
@@ -1639,22 +1682,39 @@ proc GetWordUnderIndex {fw idx} {
 }
 
 
-proc KillExecuting {{parent 0}} {
+proc DropExecutingPid {pid} {
+    global executing_pids
+    set i [lsearch -exact $pid $executing_pids]
+
+    if {$i != -1} {
+        set executing_pids [lreplace $executing_pids $i $i] 
+    }
+}
+
+
+proc KillExecuting {{signal SIGKILL} {parent 0}} {
     global executing_pids win_mode
 
     if {$executing_pids != ""} {
-        # shell may have exec'd or may have forked subprocesses
+        if {!$win_mode} {
+            foreach pid $executing_pids {
+                # shell may have exec'd or may have forked subprocesses
+                set cpids [ChildPids $pid]
+                catch [list exec kill -$signal {*}$cpids]
 
-        foreach pid $executing_pids {
-            foreach cpid [ChildPids $pid] {
-                catch [list exec kill -9 $cpid]
+                if {[catch [list exec kill -$signal $pid]]} {
+                    DropExecutingPid $pid
+                }
+            }
+        } else {
+            if {$parent} {
+                set win_mode 0
             }
 
-            if {$parent || !$win_mode} {
-                catch [list exec kill -9 $pid]
-                set executing_pids {}
-                Append "\n*** KILLED\n"
-                set win_mode 0
+            foreach pid $executing_pids {
+                if {[catch [list exec kill -$signal $pid]]} {
+                    DropExecutingPid $pid
+                }
             }
         }
     }
@@ -1767,6 +1827,18 @@ proc RemoveTempFile {fname} {
 }
 
 
+proc RefreshDirectory {} {
+    global current_filename
+
+    if {[GetFilename] != ""} {
+        if {[file type $current_filename] == "directory"} {
+            OpenDirectory $current_filename
+            cd $current_filename
+        }
+    }
+}
+
+
 proc RevertFile {{force 0}} {
     global current_filename
 
@@ -1790,7 +1862,7 @@ proc RevertFile {{force 0}} {
 
 
 proc Execute {fw {arg ""}} {
-    global has_focus
+    global has_focus 
     # range: either what is swept with B2, or the selection (if the mouse is inside it)
     # or the word under the cursor:
 
@@ -1846,12 +1918,7 @@ proc FocusExecute {cmd ctxt} {
 proc DoExecute {cmd {ctxt ""}} {
     global command_table command_arguments shell win_mode
     set sel [GetEffectiveSelection .t]
-    set tsel 1
-
-    if {$sel == ""} {
-        set sel [GetEffectiveSelection .tag]
-        set tsel 0
-    }
+    set ptop [lindex [.t yview] 0]
 
     switch -regexp -- $cmd {
         {^$} return
@@ -1865,9 +1932,8 @@ proc DoExecute {cmd {ctxt ""}} {
             }
 
             set input [.t get $start $end]                
-            set cmd [string range $cmd 1 [string length $cmd]]
+            set cmd [string range $cmd 1 end]
             set outf [TempFile]
-            Flash blue
             set output ""
             
             if {[catch [list exec $shell -c $cmd << $input > $outf] result]} {
@@ -1883,14 +1949,14 @@ proc DoExecute {cmd {ctxt ""}} {
                 }
             }
 
-            Insert $output
+            Insert $output sel
+            .t yview moveto $ptop
             return
         }
         {^<} {
             set outf [TempFile]
-            set cmd [string range $cmd 1 [string length $cmd]]
+            set cmd [string range $cmd 1 end]
             set output ""
-            Flash blue
             
             if {[catch [list exec $shell -c $cmd < /dev/null > $outf] result]} {
                 LogInWindow $result 1
@@ -1901,9 +1967,10 @@ proc DoExecute {cmd {ctxt ""}} {
                 }
             }
 
-            if {$sel != "" && $tsel} {eval .t delete $sel}
+            if {$sel != ""} {eval .t delete $sel}
 
-            Insert $output
+            Insert $output sel
+            .t yview moveto $ptop
             return
         }
         {^>} {
@@ -1923,8 +1990,6 @@ proc DoExecute {cmd {ctxt ""}} {
         }
     }
 
-    if {$cmd == ""} return
-
     foreach opr $command_table {
         set command_arguments [regexp -inline -- [lindex $opr 0] $cmd]
 
@@ -1935,6 +2000,11 @@ proc DoExecute {cmd {ctxt ""}} {
     }
 
     if {[RunHook execute_hook $cmd $ctxt] != ""} return
+
+    if {$win_mode} {
+        SendToProcess $cmd
+        return
+    }
 
     set cmd1 [FindExecutable $cmd]
 
@@ -1987,45 +2057,15 @@ proc ScrollTo {p} {
 }
 
 
-proc Replace {arg} {
-    set sel [GetEffectiveSelection .t]
-
-    if {$sel == ""} {
-        set start 1.0
-        set end end
-    } else {
-        set start [lindex $sel 0]
-        set end [lindex $sel 1]
-    }
-
-    if {![regexp {^\s*"([^"]+)"\s*"([^"]*)"\s*$} $arg _ from to]} {
-        if {![regexp {^\s*([^ ]+)\s+(.+)$} $arg _ from to]} {
-            Flash red
-            return
-        }
-    }
-
-    while 1 {
-        set p1 [.t search -regexp -count len -- $from $start $end]
-
-        if {$p1 == ""} break        
-
-        regsub -line -- $from [.t get $p1 "$p1 + $len chars"] $to rpl
-        .t replace $p1 [.t index "$p1 + $len chars"] $rpl
-        set start [.t index "$p1 + [string length $rpl] chars"]
-    }
-}
-
-
 proc GetSelection {{fw ""}} {
     if {$fw == ""} {
-	set fw [GetFocusWidget]
+        set fw [GetFocusWidget]
     }
 
     set range [GetEffectiveSelection $fw]
 
     if {$range == ""} {
-	return [$fw get {insert linestart} {insert lineend}]
+        return [$fw get {insert linestart} {insert lineend}]
     }
 
     return [$fw get [lindex $range 0] [lindex $range 1]]
@@ -2033,11 +2073,13 @@ proc GetSelection {{fw ""}} {
 
 
 proc GetEffectiveSelection {w} {
-    if {$w == [focus -displayof .]} {
-        return [$w tag ranges sel]
+    set sel [$w tag ranges sel]
+
+    if {$sel == ""} {
+        return [$w tag ranges pseudosel]
     }
 
-    return [$w tag ranges pseudosel]
+    return $sel
 }
 
 
@@ -2045,7 +2087,7 @@ proc GetSelectedLines {} {
     set range [GetEffectiveSelection .t]
 
     if {$range == ""} {
-	return [.t get {insert linestart} {insert lineend}]
+        return [.t get {insert linestart} {insert lineend}]
     }
 
     return [.t get "[lindex $range 0] linestart" "[lindex $range 1] lineend"]
@@ -2053,6 +2095,7 @@ proc GetSelectedLines {} {
 
 
 proc RemoveSelection {{fw ""}} {
+    global pseudosel_on
     set rfw [focus -displayof .]
 
     if {$fw == ""} {
@@ -2067,11 +2110,14 @@ proc RemoveSelection {{fw ""}} {
         }   
     }
 
+    set pseudosel_on($fw) 0
     return $fw
 }
 
 
 proc RemovePseudoSelection {fw} {
+    global pseudosel_on
+
     foreach tag {pseudosel b2sweep b3sweep} {
         set old [$fw tag ranges $tag]
 
@@ -2079,10 +2125,13 @@ proc RemovePseudoSelection {fw} {
             eval $fw tag remove $tag $old
         }
     }
+
+    set pseudosel_on($fw) 0
 }
 
 
 proc RestoreSelection {fw} {
+    global pseudosel_on 
     set old [$fw tag ranges sel]
 
     if {$old == ""} {
@@ -2091,16 +2140,19 @@ proc RestoreSelection {fw} {
         if {$old != ""} {
             eval $fw tag add sel $old
             eval $fw tag remove pseudosel $old
+            set pseudosel_on($fw) 0
         }
     }
 }
 
 
 proc SaveSelection {fw} {
+    global pseudosel_on
     set old [$fw tag ranges sel]
 
     if {$old != ""} {
         eval $fw tag add pseudosel $old
+        set pseudosel_on($fw) 1
     }
 }
 
@@ -2150,14 +2202,15 @@ proc EnterWinMode {{cmd ""}} {
 
     if {$cmd == ""} {set cmd $shell}
 
-    if {[catch [list open "| ${exec_prefix}pty $cmd 2>@1" r+] win_file]} {
+    if {[catch [list open "| ${exec_prefix}pty $cmd 2>@1" \
+        r+] win_file]} {
         Append "\nCommand failed: $win_file\n"
         return
     }
 
     set win_mode 1
     ToggleScroll 1
-    eval lappend executing_pids [ChildPids [pid $win_file]]
+    eval lappend executing_pids [pid $win_file]
     fconfigure $win_file -blocking 0
     fileevent $win_file readable [list LogOutput $win_file]
     .t configure -insertofftime 300
@@ -2193,6 +2246,12 @@ proc EnterWinMode {{cmd ""}} {
             .t mark set win_insert_point insert
             break
         }
+    }
+
+    DefineCommand {^Interrupt$} {
+        global win_file
+        puts $win_file "\x03"
+        flush $win_file
     }
 
     bind .t <KeyPress> {
@@ -2547,12 +2606,21 @@ wm protocol . WM_DELETE_WINDOW Terminate
 # key events
 
 DefineKey <KeyPress> {TakeFocus; set cut_unmodified ""}
-DefineKey <Control-plus> { ResizeFont 1 }
-DefineKey <Control-minus> { ResizeFont -1 }
+
+DefineKey <Control-plus> { 
+    global current_font_size
+    ResizeFont [expr $current_font_size + 1]
+}
+
+DefineKey <Control-minus> { 
+    global current_font_size
+    ResizeFont [expr $current_font_size - 1]
+}
+
 DefineKey <Control-c> { tk_textCopy [GetFocusWidget]; break }
 DefineKey <Control-x> { tk_textCut [GetFocusWidget]; break }
 DefineKey <Control-v> { PasteSelection [GetFocusWidget]; break }
-DefineKey <Delete> { KillExecuting; break }
+DefineKey <Delete> { KillExecuting SIGINT; break }
 DefineKey <Control-f> { FilenameCompletion; break }
 
 DefineKey <Return> {
@@ -2783,7 +2851,14 @@ DefineKey <ButtonPress-2> {
 
 DefineKey <ButtonRelease-2> {
     set b2_down 0
-    ExecButtonRelease
+
+    if {$b3_down} {
+        set b3_abort 1
+        RemoveTaggedRange %W b3sweep
+    } else {
+        ExecButtonRelease
+    }
+
     break
 }
 
@@ -2834,7 +2909,12 @@ DefineKey <ButtonRelease-3> {
         break
     }
 
-    Acquire
+    if {!$b3_abort} {
+        Acquire
+    } else {
+        set b3_abort 0
+    }
+
     break
 }
 
@@ -2876,11 +2956,15 @@ DefineKey <Motion> {
 }
 
 DefineKey <<Selection>> { 
+    global pseudosel_on
     set fw %W
-    set sel [$fw tag ranges sel]
 
-    if {$sel != ""} { 
-        RemovePseudoSelection $fw
+    if {$pseudosel_on($fw)} {
+        set sel [$fw tag ranges sel]
+
+        if {$sel != ""} { 
+            RemovePseudoSelection $fw
+        }
     }
 }
 
@@ -3013,7 +3097,7 @@ for {set i 0} {$i < $argc} {incr i} {
             incr i
 
             if {$i >= $argc} {
-                set cmd "$shell -l"
+                set cmd "$shell $interactive_shell_args"
             } else {              
                 set cmd [lrange $argv $i [llength $argv]]
             }

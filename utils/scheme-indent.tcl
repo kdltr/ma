@@ -65,7 +65,7 @@ proc SchemeIndentLine {} {
     set pline [.t get "$front + 1 chars" "$front lineend"]
     set tab 0
 
-    if {[regexp {^\s*(\(|\s*$)} $pline]} {
+    if {[regexp {^\s*(\(|\s*$)} $pline] && $front != "1.0"} {
         set tab 1
     } else {
         foreach item $block_forms {

@@ -29,25 +29,24 @@ windows, nor does it manage them in any way (this is delegated to the
 window manager.)
 
 
-
 Installation:
 
 Invoke 
 
   ./build 
 
-and put the files "ma", "awd", "win", "pty", "plumb"
-and "B" in your PATH and ".plumb" into your $HOME.
+and put the files "ma", "awd", "win", "pty", "plumb" and "B" in your
+PATH and ".plumb" into your $HOME.
 
 
 Usage:
 
-"ma" works basically like Acme, but does no own window-management.
-Configuration is done in the file "~/.ma", holding Tcl code to modify
-fonts, colors, etc.  A number of command-line options can be provided
-to set various of these options and to run "ma" in special modes, or
-comunicate with the "registry", a "ma" instance that allows locating
-files that are already open.
+"ma" attempts to work as much as possible like Acme, but does no
+own window-management.  Configuration is done in the file "~/.ma",
+holding Tcl code to modify fonts, colors, etc.  A number of command-line
+options can be provided to set various of these options and to run "ma"
+in special modes, or comunicate with the "registry", a "ma" instance
+that allows locating files that are already open.
 
 
 To start the registry, run
@@ -119,10 +118,55 @@ MA
     programs.
 
 
+Access from the command line:
+
+Using "ma-eval", some elements from a "ma" window can be
+accessed by sending Tcl code to the process in which a shell command
+was initiated:
+
+For example,
+
+    ma-eval $MA GetBody
+
+would print the contents of the window body to stdout. Here is a selection 
+of  some useful Tcl commands that you can use (for more intricate access,
+study the "ma" source code):
+
+    GetBody
+    GetTag
+    GetLabel
+    SetBody TEXT
+    SetTag TEXT
+    SetLabel TEXT
+    ReplaceFile FILENAME
+    GetDot
+    SetDot ADDRESSS
+    Insert TEXT
+    InsertFile FILENAME
+    Append TEXT
+    AppendFile FILENAME
+
+Note that text may have to be suitable quoted to be passed trough
+to the Tcl interpreter that is running in the window, like this:
+
+    ma-eval $MA Insert "{this is a test}"
+
+
+Customization:
+
+At the start of the "ma" script, you will find a number of global
+variables that hold default values for fonts, colors and other
+settings that are used throughtout the editor. Modify these at
+your convenience.
+
+
 Extending:
 
-Use "DefineCommand REGEX EXPR" to define Tcl code to be executed when
-the command given in REGEX is executed, i.e.
+The easiest way to add commands is simply to put scripts or programs
+in your PATH. If you want more thorough integration, you can also
+define commands at the Tcl level, by using "DefineCommand REGEX EXPR" 
+to define Tcl code to be executed when the command given in REGEX is 
+executed, i.e.
 
     DefineCommand {^MyCommand\s+(.+)$} { ... }
 
@@ -136,58 +180,55 @@ consult the source code or contact me[3].
 To do:
 
 - (bug) crash of program in win-mode doesn't print any message
-- (bug) KeyRelease-event in .tag (getting through after invoking dmenu(1) in this
-  case) results in incorrect resize of tag, even though only first line contains text
+- (bug) KeyRelease-event in .tag (getting through after invoking dmenu(1) 
+  in this case) results in incorrect resize of tag, even though only 
+  first line contains text
 - (bug) Automatic resizing of the tag doesn't always work
-- (bug) sort order in columnar listing is wrong (should be rowwise, not columnwise)
+- (bug) sort order in columnar listing is wrong (should be rowwise, not 
+  columnwise)
 - (bug) Mac/X11: wrong arrow cursor (points right)
-- (bug) Delete key should send SIGINT instead of SIGKILL
-- (bug) Tk seems to clear the clipboard when exiting, so the contents copied from
-  a terminated instance are not recovered
+- (bug) Tk seems to clear the clipboard when exiting, so the contents 
+  copied from a terminated instance are not recovered
 - (bug) the (pseudo-)selection is sometimes retained even after input
-- (bug) MA_LABEL isn't always set
-- rename InvokeExternalCommandInWindow to something better
+- (bug) "Look" doesn't keep selection after a few repeated searches
+- (bug) "Back" should not put position on search-stack if search wraps
+   around
 
 Shortcomings:
 
 - the file-registry needs to be explicitly started
 - the "Kill" command (Del key) is too coarse and kills all subprocesses
-- width use for computing columnar layout seems not to be correct (always 80?)
-- autosnarf when selecting: no idea how to do this, keeping current selection and copying 
-  when selection gets empty doesn't work, since selection by mouse apparently clears
-  it in between movements
+- width use for computing columnar layout seems not to be correct 
+  (always 80?)
+- autosnarf when selecting: no idea how to do this, keeping current 
+  selection and copying when selection gets empty doesn't work, since 
+  selection by mouse apparently clears it in between movements
   - perhaps detect when selection changes from non-empty to empty
 - there is no "Zerox" command
 - works very bad on Mac/Aqua and Windows:
-  - Mac: default Tcl/Tk crashes, freshly installed (Aqua) aborts unexpectedly, B2/B3 
-    are swapped, slow startup (Mac/X11 works surprisingly well, though)
-  - Windows: cursor in text widget barely visible (black, even on dark background),
-    startup very slow, binding Ctrl-keys doesn't seem to work, UpdateTag doesn't
-    seem to treat filename as valid and inserts Win-style path before it (this is 
-    with Active State Tcl/Tk, 8.6.4)
+  - Mac: default Tcl/Tk crashes, freshly installed (Aqua) aborts 
+    unexpectedly, B2/B3 are swapped, slow startup (Mac/X11 works 
+    surprisingly well, though)
+  - Windows: cursor in text widget barely visible (black, even on dark 
+    background), startup very slow, binding Ctrl-keys doesn't seem to 
+    work, UpdateTag doesn't seem to treat filename as valid and inserts 
+    Win-style path before it (this is with Active State Tcl/Tk, 8.6.4)
 - B1B2/B1B3 doesn't work when B1 was double-clicked
 - there is no backup-file
 - B2 in .sbar should respect current offset from mouse-pointer to top
   of bar (currently scrolls so that top of bar is reference-point)
 - The move-box of a window is faked with a special unicode char
-- Address syntax only supports a subset of acme/sam and is rather crude (see also
-  comment in ParseAddr), "/.../"/"?...?" addresses only select a position, not ranges
-- In "win" mode, MA tries to remove the prompt from input lines, but moving
-  the insertion point may confuse this, if possible use a prompt for interactively
-  used programs that will be ignored (e.g. ":;" for sh)
-- Password-entry in "win" mode works only when the insertion cursor is not moved by
-   mouse or cursor-movement keys
-- "Putall" is implemented, but will save all files in all open windows, even on
-  virtual screens not currently visible
+- Address syntax only supports a subset of acme/sam and is rather crude 
+  (see also comment in ParseAddr), "/.../"/"?...?" addresses only select 
+  a position, not ranges
+- In "win" mode, MA tries to remove the prompt from input lines, but 
+  moving the insertion point may confuse this, if possible use a prompt 
+  for interactively used programs that will be ignored (e.g. ":;" for sh)
+- Password-entry in "win" mode works only when the insertion cursor is 
+  not moved by mouse or cursor-movement keys
+- "Putall" is implemented, but will save all files in all open windows, 
+  even on virtual screens not currently visible
 - there is no "Edit" command
-
-Unclear:
-
-- use file-registry for locating +Errors windows, instead of custom appname?
-   (but that requires registry to be running)
-- make plumbing completely external, associate regexen to shell scripts by 
-  external command
-- provide command-line interface to access internals, similar to [5]
 
 Differences to acme(1):
 
@@ -199,26 +240,35 @@ Differences to acme(1):
 - supports Up/Down movement by line
 - inserting with active selection doesn't snarf
 - indentation-setting is window-local
-- executing with redirection in "win" mode invokes shell, and does not send
-  the command to the process running in the window
-- executing in tag always has current window as context, executing in body has
-  currently focussed window as context (if registry is running)
+- executing with redirection in "win" mode invokes shell, and does not 
+  send the command to the process running in the window
+- executing in tag always has current window as context, executing in body 
+  has currently focussed window as context (if registry is running)
 - double-clicking opening bracket selects forward, but quote-scanning
   works backwards (in acme both bracket and quotes only select backwards)
 - indent-mode works differently
 - word under cursor is defined as ws-delimited (excluding parentheses)
-- win-mode: pressing RETURN before current insert point sends the whole line
-- "noscroll" mode is much weaker and only available in "+Errors" + "win" windows
+- win-mode: pressing RETURN before current insert point sends the whole 
+  line
+- "noscroll" mode is much weaker and only available in "+Errors" + "win" 
+  windows
 - basic keyboard commands for mouse-less operation: 
   C-1 (toggle focus), C-2 (execute selection), C-3 (acquire selection)
 - B3-search is case-insensitive, search with "Look" is not
 - "//.../" address disables most regex syntax (used for ctags)
 - Various emacsish keyboad sequences, as provided by the Tk text widget
-- Additional commands: "Anchor", "Withdraw", "Tcl", "Crnl", "Replace", "Back"
+- Additional commands: 
+    Anchor: add address of insertion point into tag
+    Withdraw: hide window
+    Tcl CODE: execute Tcl code
+    Crnl: toggle between UNIX/DOS line-terminator encoding
+    Back: jump back to previous address after search
+    Interrupt: send ^C to interactive subprocess
 - MA supports paren-matching
 - Shift-B3 is equivalent to B2
 - Acquiring an existing window doesn't warp mouse to current selection
-- B2 on a directory opens the "directory editor"
+- The "Local" command toggles a state whether directories are opened
+  in the current window or a new one
 
 All of MA's source code is hereby placed in the public domain
 
@@ -230,6 +280,41 @@ Acknowledgements:
         Kooda for fixing the completely broken implementation of pty.c
 
 Version history:
+
+8
+
+    - B2 in win mode is equivalent to "Send" command.
+    - Reduced some unnecessary "Flash"ing.
+    - Executing with redirection keeps the result selected.
+    - Getting the effective selection worked only when target widget had focus,
+      resulting in selection/pseudoselection confusion.
+    - In "win" mode the "Interrupt" command inserts ^C into the input stream.
+    - Directory view should now format columns correctly after window has been
+      shown for the first time.
+    - Fixed a problem with plumbing a string beginning with Tcl redirection
+      characters.
+    - If the result-string of a remote call via "ma-eval" is empty, no 
+      output is produced.
+    - The registry resolved symlinks before locating a file.
+    - Executing with "|" or "<" tries to keep visible area.
+
+7
+
+    - Added "Local" command (suggested by C-Keen).
+    - Attempt to optimize <<Selection>> event handler which seems to be slow
+      on ssome machines.
+    - B2 can now be used to abort B3-sweeping.
+    - When "scroll" mode is off, try to keep start of output received by every external
+       command at top of screen.
+    - Pressing <Delete> sends SIGINT instead of SIGKILL now.
+    - The "pty" programm catches SIGINT and propagates it to the process group.
+    - Location of existing windows via registry handles spaces in directory names
+      correctly.
+    - Filenames with single quote in label are correctly quoted using double quotes.
+    - Execution with redirection always uses body selection or whole body.
+    - Dropped the "Replace" command (use an external tools like sed(1) or "LR"
+      from ma-utils).
+    - Re-activation of directory window refreshes contents.
 
 6
 
@@ -315,3 +400,5 @@ Version history:
 [3] felix@call-with-current-continuation.org
 [4] http://www.cs.yorku.ca/~oz/wily/
 [5] http://www.cs.yorku.ca/~oz/wily/python.html
+[6] http://www.linusakesson.net/programming/syntaxhighlighting/
+[7] https://www.robertmelton.com/project/syntax-highlighting-off/

@@ -45,7 +45,7 @@ proc Git_UpdateStatus {} {
 # invoked externally to update
 proc Git_Update {} {
     Git_UpdateStatus
-    Git_updateBranch
+    Git_UpdateBranch
 }
 
 
@@ -134,7 +134,7 @@ proc Git_FName {str} {
 }
 
 
-DefineCommand {^Update$} {
+proc Git_UpdateStatus args {
     global git_status_mode git_branch_op git_mode
 
     if {$git_mode == "branch"} {
@@ -147,6 +147,8 @@ DefineCommand {^Update$} {
     }
 }
 
+AddToHook revert_hook Git_UpdateStatus
+
 
 DefineCommand {^Log$} {
     global git_root git_lib_dir
@@ -154,7 +156,7 @@ DefineCommand {^Log$} {
     if {[catch [list send $git_root/+GitLog Git_Update]]} {
         Ma -cd $git_root -execute $git_lib_dir/git-log.tcl \
             -post-eval "Git_Log" -temporary \
-            -tag "$git_root/+GitLog New Del Cut Paste Snarf Look Stat Update | "
+            -tag "$git_root/+GitLog New Del Cut Paste Snarf Get Look Stat | "
     }    
 }
 
@@ -260,12 +262,6 @@ DefinePlumbing {^unadd:(.*)$} {
     exec git reset -q -- $fname
     Git_Status
     return 1
-}
-
-DefineCommand {^Create\s+(\S+)$} {
-    set name [GetArg 1]
-    InvokeExternalCommandInWindow "git checkout -b $name"
-    after 500 Git_Branch
 }
 
 

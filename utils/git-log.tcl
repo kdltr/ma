@@ -34,7 +34,12 @@ proc Git_Log {} {
 }
 
 
-DefineCommand {^Update$} Git_Log
+proc Git_UpdateLog args {
+    Git_Log
+    return 1
+}
+
+AddToHook revert_hook GiutUpdateLog
 
 DefineCommand {^More$} {
     global git_log_len

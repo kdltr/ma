@@ -19,12 +19,22 @@
 #include <poll.h>
 #include <termios.h>
 #include <time.h>
+#include <signal.h>
 
 
-void usage(int code)
+static int sigint = 0;
+
+
+static void usage(int code)
 {
    fprintf(stderr, "usage: pty COMMAND ...\n");
    exit(code);
+}
+
+
+static void sighandler(int sig)
+{
+    sigint = 1;
 }
 
 
@@ -47,9 +57,16 @@ int main(int argc, char* argv[])
     if(execvp(args[ 0 ], args) == -1)
       perror("execvp");
 
-    fprintf(stderr, "program exited.\n");
     return 1;
   }
+
+  struct sigaction act;
+  act.sa_handler = sighandler;
+  act.sa_flags = 0;
+  sigemptyset(&act.sa_mask);
+  
+  if(sigaction(SIGINT, &act, NULL) == -1)
+    perror("sigaction");
 
   struct termios ti;
   tcgetattr(fd, &ti);
@@ -68,11 +85,22 @@ int main(int argc, char* argv[])
 
   for(;;) {    
     pfd[ 0 ].revents = pfd[ 1 ].revents = 0;
+
+    if(sigint) {
+        pid_t tpgid = tcgetpgrp(fd);
+
+        if(tpgid != -1) kill(-tpgid, SIGINT);
+
+        sigint = 0;
+    }
+
     int r = poll(pfd, 2, -1);
 
     if(r == -1) {
-      perror("poll");
-      return 1;
+         if(errno != EINTR) {
+               perror("poll");
+               return 1;
+         }
     }
 
     if(r > 0) {
