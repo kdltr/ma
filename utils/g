@@ -1,4 +1,11 @@
-#!/bin/bash
+#!/bin/sh
+#
+# grep common files for patterns
+
+if test -z "$1"; then
+    echo "usage: g PATTERN [FILENAME ...]" 1>&2
+    exit 1
+fi
 
 pat="$1"
 shift

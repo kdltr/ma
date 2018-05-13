@@ -29,5 +29,5 @@ DefineCommand {^Git$} {
 
     Ma -cd $dir -execute $git_lib_dir/git-status.tcl -post-eval \
         Git_Status -temporary \
-        -tag "$dir/+Git New Del Cut Paste Snarf Look Update Log Branch Commit CommitAll Amend Revert | "
+        -tag "$dir/+Git New Del Cut Paste Snarf Get Look Log Branch Commit CommitAll Amend Revert | "
 }

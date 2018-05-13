@@ -2,12 +2,17 @@
 #
 # indent/unindent
 #
-# usage: ind [COLUMNS]
+# usage: ind [COLUMNS [TEXT]]
 
 set c 4
+set prefix ""
 
 if {$argc > 0} {
     set c [lindex $argv 0]
+
+    if {$argc > 1} {
+        set prefix [lindex $argv 1]
+    }
 }
 
 if {[regexp {unind$} $argv0]} {
@@ -15,7 +20,7 @@ if {[regexp {unind$} $argv0]} {
 }
 
 if {$c > 0} {
-    set prefix [string repeat " " $c]
+    append prefix [string repeat " " [expr $c - [string length $prefix]]]
 }
 
 while {[gets stdin line] >= 0} {

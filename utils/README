@@ -46,24 +46,21 @@ not perfect. Use at your own risk and modify to your liking.
 
     Enabled with the "SchemeIndent" command, consider adding this:
 
-        AddFileHook {\.(scm|ss|scheme|meta|setup)$} SchemeIndent
-
-• "archive.tcl": dump contents of archive files on B3.
+        AddFileHook {\.(scm|ss|scheme|egg)$} SchemeIndent
 
 • "mark.tcl": mark regex or address with color.
 
 * "diff.tcl": mark changes in diff + patch files (needs hooks.tcl)
 
-• "gopher.tcl": minimal gopher client.
-
-    Uses "gopher" tool for retrieving pages.
-
 • "savedstate.tcl": save font/colors for every saved file and restore
    when reopened.
 
+• "execfile.tcl": B2 on special files invokes a custom command. Currently
+    runs make(1) for makefiles and extracts zip and tar files. Easy to extend.
+
 • "git*.tcl": a simple git(1) interface
 
-    "Git" opens a status window for the git repository in the current
+    The "Git" command opens a status window for the git repository in the current
     directory or one of the parent directories. There are various commands
     for showing log, branches, and to add diffs selectively.
 
@@ -86,6 +83,54 @@ not perfect. Use at your own risk and modify to your liking.
 
     "post-commit" is a hook that can be installed to update the status
     window a utomatically, if it exists.
+
+    To install, add this to your ~/.ma:
+
+        set git_lib_dir <libpath>
+        source <libpath>/git.tcl
+
+    where <libpath> is the directory where git-*.tcl and post-commit
+    can be found.
+
+    Status + Branch view:
+
+        Commands:
+
+        Update      Update status/branch view
+        Log         Show git log ("More" in the log window extends the range)
+        Branch      Switch to branch view
+        Status      Switch to status view
+        Commit      Commit added changes
+        CommitAll   Commit all changes
+        Amend       Commit added changes, amending last commit
+        Revert      Switch to revert mode
+        Diff        Switch to normal (diff) mode
+        CO          Checkout mode
+        Merge       Merge mode
+        Push        Push branch
+        Pull        Pull branch
+
+        Plumbing patterns:
+
+        diff:...    Show diff
+        revert:...  Revert file
+        checkout:... Checkout branch
+        merge:...   Merge branch
+        add:...     Add file to staging area
+        unadd:...   Remove file from staging area
+        reset:...   Reset changes in file
+        
+    Diff view:
+
+        Commands:
+
+        Add         Add selected changes
+        Commit      Add + commit selected changes
+        Invert      Invert selection
+
+        Plumbing patterns:
+
+        hunk:...    Select/deselect hunk
 
 • Color themes: Simple color schemes.
 
@@ -117,18 +162,18 @@ not perfect. Use at your own risk and modify to your liking.
 
     unquote
 
-        Unquote E-mail text (remove leading "> ")
+        Unquote E-mail text (remove leading "> "), copy or symlink to
+        "quote" to do the opposite.
 
     ind [N]
 
         Indent input by N characters (defaults to 4), copy or symlink to
         "unind" to unindent.
 
-    LR [-a] REGEX [SUBST]
+    LR [-1] REGEX [SUBST]
 
-        Perform line-wise string substitution, "-a" replaces more than
-        the first match. I use this since I can never remember how to
-        use sed(1).
+        Perform line-wise string substitution, "-1" replaces only the first
+        I use this since I can never remember how to use sed(1).
 
 All of this code is placed in the public domain.
 
