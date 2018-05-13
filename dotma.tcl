@@ -1,6 +1,10 @@
-set current_fixed_font "Source Code Pro"
-set current_variable_font "Source Code Pro"
+set current_fixed_font "Terminus"
+set current_variable_font "Terminus"
 #set current_font $current_variable_font
+set current_font_size 10
+set fixed_font_size 10
+set variable_font_size 10
+set tag_font_size 10
 
 set browser "x-www-browser"
 set image_viewer "sxiv"
