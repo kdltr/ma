@@ -10,25 +10,30 @@ set plumbfile "~/.plumb"
 set plumbing_rules {}
 set ws [pwd]
 set attrs [dict create]
+set info 0
 
 if {[info exists env(HERE)]} {
     set plumbfile $env(HERE)/lib/plumb
 }
 
+
 proc Usage {{code 1}} {
-    puts stderr {usage: plumb [-p FILENAME] [-h] [-a NAME=VAL] [-w DIR] [--] STRING ...}
+    puts stderr {usage: plumb [-p FILENAME] [-h] [-a NAME=VAL] [-w DIR] [-i] [--] STRING ...}
     exit $code
 }
+
 
 proc Plumb {pat code} {
     global plumbing_rules
     lappend plumbing_rules [list $pat $code]
 }
 
+
 proc GetArg {{i 1}} {
     global command_arguments
     return [lindex $command_arguments $i]
 }
+
 
 proc TempFile {} {
     global env
@@ -41,6 +46,7 @@ proc TempFile {} {
     return "$tmpdir/0.[pid].[expr rand()]"
 }
 
+
 proc GetAttr {name {default ""}} {
     global attrs
 
@@ -51,9 +57,11 @@ proc GetAttr {name {default ""}} {
     return $default
 }
 
+
 proc Run args {
     exec {*}$args 2>@ stderr < /dev/null &
 }
+
 
 set str ""
 
@@ -62,6 +70,7 @@ for {set i 0} {$i < $argc} {incr i} {
 
     switch -regex -- $arg {
         {^--?h(elp)?$} {Usage 0}
+        {^-i$} {set info 1}
         {^-p$} {
             incr i
             set plumbfile [lindex $argv $i]
@@ -89,12 +98,17 @@ for {set i 0} {$i < $argc} {incr i} {
 
 source $plumbfile
 close stdout
-set str [join $str]
+set str [string trim [join $str]]
 
 foreach r $plumbing_rules {
     set command_arguments [regexp -inline -- [lindex $r 0] $str]
 
     if {$command_arguments != ""} {
+        if {$info} {
+            puts stderr [lindex $command_arguments 0]
+            exit
+        }
+
         set r [eval [lindex $r 1]]
 
         if {$r != 0} exit

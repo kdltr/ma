@@ -18,7 +18,6 @@ if {[info exists env(TMPDIR)]} {
 }
 
 set async ""
-set eot_symbol "␄"
 
 
 proc Usage {{code 1}} {
@@ -37,19 +36,23 @@ if {$id == "-async"} {
 }
 
 if {$id == ""} {
+    set data [read stdin]
+
+    if {$data == ""} exit
+
+    set tmpfile $tmpdir/temp-[pid].[expr rand()]
+    set tmp [open $tmpfile w]
+    puts -nonewline $tmp $data
+    close $tmp 
     set dir [pwd]
     set dname "$dir/+Errors"
 
     if {[catch [list send $dname #]]} {
         exec ${exec_prefix}ma -name $dname -temporary -tag \
-            "$dir/+Errors New Del Cut Paste Snarf Send Look Font Wrap Scroll | " &
+            "$dname New Del Cut Paste Snarf Send Look Font Scroll | " &
         after 100
     }
 
-    set tmpfile $tmpdir/temp-[pid].[expr rand()]
-    set tmp [open $tmpfile w]
-    fcopy stdin $tmp
-    close $tmp 
     send $dname AppendFile $tmpfile
     file delete $tmpfile
     exit
@@ -57,11 +60,15 @@ if {$id == ""} {
 
 if {$exp == ""} {set exp [read stdin]}
 
-if {[catch [list eval send $async $id $exp] result]} {
+if {[catch [list eval send $async $id "$exp"] result]} {
+    puts stderr $result
     exit 1
 }
 
 if {$async != ""} exit
 
-puts $result
+if {$result != ""} {
+    puts $result
+}
+
 exit
