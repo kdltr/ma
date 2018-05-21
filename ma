@@ -11,12 +11,12 @@ set rcfile "$env(HOME)/.ma"
 set plumber "plumb"
 set exec_path [split $env(PATH) ":"]
 set include_path {"/usr/include"}
-set current_font_size 12
+set current_font_size 14
 set directory_font_size $current_font_size
-set tag_font_size $current_font_size
+set tag_font_size 10
 set tag_font_style normal
-set current_fixed_font "Source Code Pro"
-set current_variable_font "Source Code Pro"
+set current_fixed_font "Courier"
+set current_variable_font "Helvetica"
 set current_font $current_variable_font
 set current_font_style normal
 set password_char "∎"

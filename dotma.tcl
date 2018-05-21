@@ -1,11 +1,3 @@
-set current_fixed_font "Terminus"
-set current_variable_font "Terminus"
-#set current_font $current_variable_font
-set current_font_size 10
-set fixed_font_size 10
-set variable_font_size 10
-set tag_font_size 10
-
 ## File hooks
 
 source /my/library/code/ma/utils/hooks.tcl
