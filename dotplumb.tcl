@@ -2,22 +2,35 @@ set browser "x-www-browser"
 set image_viewer "sxiv"
 set pdf_viewer "mupdf"
 
+# manual pages "page(section)"
+Plumb {^(.+)\((.e+)\)$} {
+    set manpage [GetArg 1].[GetArg 2]
+    Run man $manpage | ma -stdin
+}
 
-Plumb {^(.+)(.png|.jpg|.jpeg|.gif)} {
+# scheme documentation "(path to manual page)"
+Plumb {^\((.+)\)$} {
+    set page [split [GetArg 1]]
+    exec chicken-doc {*}$page 2>&1 | ma -stdin
+}
+
+# image files
+Plumb {^(.+)(.png|.jpg|.jpeg|.gif)$} {
     set fname [GetArg 0]
     if {[file exists $fname]} {
        global image_viewer
-       exec $image_viewer $fname
+       Run $image_viewer $fname
        return 1
     }
     return 0
 }
 
-Plumb {^(.+).pdf} {
+# PDF files
+Plumb {^(.+).pdf$} {
     set fname [GetArg 0]
     if {[file exists $fname]} {
         global pdf_viewer
-        exec $pdf_viewer $fname
+        Run $pdf_viewer $fname
         return 1
     }
     return 0
