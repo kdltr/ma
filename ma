@@ -185,6 +185,10 @@ set command_table {
 
 set plumbing_rules {
     {{^:(.+)} { GotoBodyAddress [GetArg 1] }}
+    {{^([^:]+):((\d+|/[^/]+/|\?[^?]+\?|\$|#\d+|\.)(,(\d+|/[^/]+/|\?[^?]+\?|\$|#\d+|\.))?)} {
+        GotoFileAddress [file normalize [GetArg 1]] [GetArg 2]
+    }}
+    {{^([^:]+):} { GotoFileAddress [file normalize [GetArg 1]] }}
 }
 
 
