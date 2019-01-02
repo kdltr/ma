@@ -11,7 +11,7 @@ set rcfile "$env(HOME)/.ma"
 set plumber "plumb"
 set exec_path [split $env(PATH) ":"]
 set include_path {"/usr/include"}
-set current_font_size 14
+set current_font_size 11
 set directory_font_size $current_font_size
 set tag_font_size 10
 set tag_font_style normal
