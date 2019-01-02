@@ -8,13 +8,10 @@ fconfigure stderr -translation lf
 
 set plumbfile "~/.plumb"
 set plumbing_rules {}
+set executing_rules {}
 set ws [pwd]
 set attrs [dict create]
 set info 0
-
-if {[info exists env(HERE)]} {
-    set plumbfile $env(HERE)/lib/plumb
-}
 
 
 proc Usage {{code 1}} {
@@ -26,6 +23,12 @@ proc Usage {{code 1}} {
 proc Plumb {pat code} {
     global plumbing_rules
     lappend plumbing_rules [list $pat $code]
+}
+
+
+proc Execute {pat code} {
+    global executing_rules
+    lappend executing_rules [list $pat $code]
 }
 
 
@@ -63,6 +66,15 @@ proc Run args {
 }
 
 
+proc RunOutput args {
+    exec {*}$args 2>@ stderr < /dev/null | ma-eval &
+}
+
+
+if {[info exists env(HERE)] && [file exists $env(HERE)/lib/plumb]} {
+    source $env(HERE)/lib/plumb
+}
+
 set str ""
 
 for {set i 0} {$i < $argc} {incr i} {
@@ -70,7 +82,6 @@ for {set i 0} {$i < $argc} {incr i} {
 
     switch -regex -- $arg {
         {^--?h(elp)?$} {Usage 0}
-        {^-i$} {set info 1}
         {^-p$} {
             incr i
             set plumbfile [lindex $argv $i]
@@ -87,6 +98,7 @@ for {set i 0} {$i < $argc} {incr i} {
                 dict set attrs $n $v
             } else Usage
         }
+        {^-i$} {set info 1}
         {^--$} {
             set str [concat $str [lrange $argv [expr $i + 1] end]]
             set i $argc
@@ -96,22 +108,28 @@ for {set i 0} {$i < $argc} {incr i} {
     }
 }
 
-source $plumbfile
+if {[file exists $plumbfile]} {
+    source $plumbfile
+}
+
 close stdout
 set str [string trim [join $str]]
+set mode [GetAttr mode plumb]
+set rules $plumbing_rules
 
-foreach r $plumbing_rules {
-    set command_arguments [regexp -inline -- [lindex $r 0] $str]
+if {$mode == "exec"} {
+    set rules $executing_rules
+}
+
+foreach r $rules {
+   set command_arguments [regexp -inline -- [lindex $r 0] $str]
 
     if {$command_arguments != ""} {
-        if {$info} {
-            puts stderr [lindex $command_arguments 0]
-            exit
-        }
+        if {$info} {puts stderr $command_arguments}
 
-        set r [eval [lindex $r 1]]
+        set x [apply [list {} [lindex $r 1]]]
 
-        if {$r != 0} exit
+        if {$x != 0} exit
     }
 }
 

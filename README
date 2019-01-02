@@ -186,11 +186,9 @@ To do:
 - (bug) Automatic resizing of the tag doesn't always work
 - (bug) sort order in columnar listing is wrong (should be rowwise, not 
   columnwise)
-- (bug) Mac/X11: wrong arrow cursor (points right)
 - (bug) Tk seems to clear the clipboard when exiting, so the contents 
   copied from a terminated instance are not recovered
 - (bug) the (pseudo-)selection is sometimes retained even after input
-- (bug) "Look" doesn't keep selection after a few repeated searches
 - (bug) "Back" should not put position on search-stack if search wraps
    around
 
@@ -213,7 +211,6 @@ Shortcomings:
     background), startup very slow, binding Ctrl-keys doesn't seem to 
     work, UpdateTag doesn't seem to treat filename as valid and inserts 
     Win-style path before it (this is with Active State Tcl/Tk, 8.6.4)
-- B1B2/B1B3 doesn't work when B1 was double-clicked
 - there is no backup-file
 - B2 in .sbar should respect current offset from mouse-pointer to top
   of bar (currently scrolls so that top of bar is reference-point)
@@ -270,6 +267,35 @@ Differences to acme(1):
 - The "Local" command toggles a state whether directories are opened
   in the current window or a new one
 
+Idioms:
+
+* Remember that you have filename completion (^F) everywhere
+* Select command in tag and B2 to use it like a custom button
+* In interactive programs running in a "win" window, any command or
+  line of commands can be B2-clicked to insert it when input is 
+  requested, this also works for B2B1 chords.
+* Avoid the console, a temporary guide file with commands reduces typing
+* Use "h", "g" and "gg", also "B"
+* Select and B2 "<cat FILENAME" to insert into current position
+* use "env ... COMMAND" to override env-vars when using B3
+* Command/work files can be used for other contexts 
+  - just ensure the target window is activated
+* In win mode, use "Send" in the tag to have commands ready
+  - e.g. "Send si" in gdb
+* Double-click words to quickly select them and avoid sweeping
+* Quote or parenthesize commands that contain whitespace
+* Addresses like "FILENAME:/.../" or "FILENAME:LINE" can be used 
+  as simple hyperlinks
+* B3 tag to select all text
+* The tag can also be B2'd to execute a script you're working on
+  - MA automatically saves as executable, if a she-bang line exists
+* You can write directly into directory windows and sweep (or B2B1)
+  to execute commands on files, use Get to refresh
+* You can also simply enter and B2 commands into an +Errors window
+* Double-B1 after end of line selects whole line for execution
+* Use unique marker to separate sections in guide files to quickly jump
+  around
+
 All of MA's source code is hereby placed in the public domain
 
 Acknowledgements:
@@ -278,11 +304,32 @@ Acknowledgements:
 
         Lucas Sköldqvist for various tips and suggestions.
         Kooda for fixing the completely broken implementation of pty.c
+        "mujo" for adding several improvements and corrections.
 
 Version history:
 
-8
+11
 
+
+
+10
+    - Saving into a nonexistent directory failed with an error instead of creating
+       directories as needed.
+    - The cursor shape is now the default left-pointing arrow on all platforms
+      (thanks to "mujo")
+    - Undo/Redo always applies to window body (fixed by "mujo")
+    - Double-click B1B2 mousechord works now ("mujo", again)
+
+9
+    - Fixed a bug in "plumb" that caused a successful exit status even
+      if no rule matched.
+    - Separated variable and fixed font states.
+    - Reversed the scrollbar colors, as in acme/sam/rio.
+    - The "Insert" key does filename-completion, as alternative to Ctrl-F.
+    - B1/B3 in scrollbar has "autorepeat", using dynamically adjusted 
+      amount.
+
+8
     - B2 in win mode is equivalent to "Send" command.
     - Reduced some unnecessary "Flash"ing.
     - Executing with redirection keeps the result selected.
@@ -299,7 +346,6 @@ Version history:
     - Executing with "|" or "<" tries to keep visible area.
 
 7
-
     - Added "Local" command (suggested by C-Keen).
     - Attempt to optimize <<Selection>> event handler which seems to be slow
       on ssome machines.
@@ -317,7 +363,6 @@ Version history:
     - Re-activation of directory window refreshes contents.
 
 6
-
     - C-k on end of line just deletes the newline and doesn't overwrite the cut buffer.
     - On-demand update of tag for "Put", "Back".
     - added read and write hooks.
@@ -335,7 +380,6 @@ Version history:
     - Renaming and saving output window properly reregisters the window.
 
 5
-
     - When the label is updated, set the windows' title accordingly (suggested by Lucas Sköldqvist.)
     - added termination_hook.
     - Always enable word-wrap in win mode.
@@ -345,7 +389,6 @@ Version history:
       Kooda)
 
 4
-
     - Corrected initial tag relayout.
     - Resizing scrolls to bottom if "scroll" mode is on.
     - Dropped "-noscroll" option, added "-scroll".
@@ -357,7 +400,6 @@ Version history:
     - "Get FNAME" checks whether the current file is modified.
 
 3
-
     - "New" starts new instance in current context.
     - "Send" just appends at end (as in acme).
     - Added "Putall".
@@ -375,7 +417,6 @@ Version history:
     - B1-doubleclick in the empty space after a text line selects the complete line.
 
 2 
-
     - added some improvements in built-in plumbing rules.
     - the registry logs its actions inside its own text body.
     - the scroll-area is grayed in "scroll" mode.
@@ -391,7 +432,6 @@ Version history:
     - added "-fontstyle" option.
 
 1
-
     - initial release.
 
 

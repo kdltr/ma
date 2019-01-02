@@ -3,7 +3,7 @@
 #
 # (c)MMXV-MMXVIII Felix L. Winkelmann
 #
-# Version: 8
+# Version: 10
 
 
 # customize these variables to your taste:
@@ -11,14 +11,12 @@ set rcfile "$env(HOME)/.ma"
 set plumber "plumb"
 set exec_path [split $env(PATH) ":"]
 set include_path {"/usr/include"}
-set current_font_size 11
-set directory_font_size $current_font_size
-set tag_font_size 10
-set tag_font_style normal
-set current_fixed_font "Courier"
-set current_variable_font "Helvetica"
-set current_font $current_variable_font
-set current_font_style normal
+set fixed_font {Courier 12 normal}
+set variable_font {Helvetica 12 normal}
+set current_font $variable_font
+set tag_font $variable_font
+set tag_clean_font $tag_font
+set tag_dirty_font {Helvetica 12 bold}
 set password_char "∎"
 set current_foreground black
 set current_background "#FFFFEA"
@@ -50,8 +48,7 @@ set directory_commands {Dotfiles}
 set unnamed_name UNNAMED
 set initial_tag "$unnamed_name New Del Cut Paste Snarf Get Look Font | "
 set interactive_shell_args {}
-set tag_dirty_font_style italic
-set tag_clean_font_style normal
+set scroll_repeat 100
 
 
 # global variables
@@ -95,6 +92,7 @@ set replace_dir 0
 set pseudosel_on(.t) 0
 set pseudosel_on(.tag) 0
 set last_scroll_bottom 1.0
+set scroll_task ""
 
 set file_hook {}
 set name_hook {}
@@ -163,8 +161,8 @@ set command_table {
     {{^Font\s+(fix|var)$} {ToggleFont [GetArg]}}
     {{^Tcl$} { Evaluate [GetSelection .t] }}
     {{^Tcl\s+(.+)$} { Evaluate [GetArg] }}
-    {{^Undo$} { catch {[GetFocusWidget] edit undo}}}
-    {{^Redo$} { catch {[GetFocusWidget] edit redo} }}
+    {{^Undo$} { .t edit undo }}
+    {{^Redo$} { .t edit redo }}
     {{^Scroll$} {ToggleScroll; Flash blue}}
     {{^Anchor$} InsertAnchor}
     {{^Withdraw$} WithdrawWindow}
@@ -297,17 +295,25 @@ proc Locate {fname {addr ""}} {
 }
 
 
+proc Broadcast {code} {
+    global app_registry
+    .t insert end "broadcast: $code\n"
+
+    foreach fname [array names app_registry] {
+        set id $app_registry($fname)
+
+        if {$id != "" && $fname_registry($id) == $fname} {
+            catch [list send -async $id $code]
+        }
+    }
+}
+
+
 proc SaveAllModified {regmode} {
     global app_registry fname_registry
 
     if {$regmode} {
-        foreach fname [array names app_registry] {
-            set id $app_registry($fname)
-
-            if {$id != "" && $fname_registry($id) == $fname} {
-                catch [list send -async $id SaveIfModified]
-            }
-        }
+        Broadcast SaveIfModified
     } else {       
         if {[catch {send -async MA-registry SaveAllModified 1}]} {
             SaveIfModified
@@ -407,7 +413,7 @@ proc ParseAddr {addr} {
 
     if {$addr == "0"} { return {1.0 0} }
 
-    if {$addr == "\$"} { return {end 0} } 
+    if {$addr == "\$"} { return {end 0} }
 
     if {$addr == "."} { return {insert 0} }
 
@@ -604,26 +610,21 @@ proc InsertAnchor {} {
 
 
 proc ToggleFont {{mode ""}} {
-    global current_font current_fixed_font current_variable_font
-    global current_font_size
+    global current_font fixed_font variable_font
    
     switch $mode {
-        fix {
-            set current_font $current_fixed_font
-        }
-        var {
-            set current_font $current_variable_font
-        }
+        fix { set current_font $fixed_font }
+        var { set current_font $variable_font }
         default {
-            if {$current_font == $current_fixed_font} {
-                ToggleFont var
+            if {$current_font == $fixed_font} {
+                set current_font $variable_font
             } else {
-                ToggleFont fix
+                set current_font $fixed_font
             }
         }
     }
     # just for reconfiguration
-    ResizeFont $current_font_size
+    ResizeFont
 }
 
 
@@ -690,17 +691,15 @@ proc Unmodified {} {
 
 
 proc MarkDirty {on} {
-    global tag_font_size tag_font_style current_variable_font
-    global tag_dirty_font_style tag_clean_font_style
+    global tag_clean_font tag_dirty_font
 
     if {$on} {
-        set tag_font_style $tag_dirty_font_style
+        set tag_font $tag_dirty_font
     } else {
-        set tag_font_style $tag_clean_font_style
+        set tag_font $tag_clean_font
     }
 
-    .tag configure -font [list $current_variable_font $tag_font_size \
-        $tag_font_style]
+    .tag configure -font $tag_font
 }
 
 
@@ -1022,8 +1021,8 @@ proc NeedsQuoting {fname} {
 
 
 proc FormatColumnar {list} {
-    global current_font current_font_size
-    set zw [font measure [list $current_font $current_font_size] 0]
+    global current_font
+    set zw [font measure $current_font 0]
     set w [expr [winfo width .t] / $zw]
     set n [llength $list]
     set maxlen 0
@@ -1079,7 +1078,7 @@ proc FormatColumnar {list} {
 
 proc OpenDirectory {name} { 
     global current_translation position_stack editable dotfiles
-    global directory_commands directory_font_size current_font_size
+    global directory_commands
     set name [file normalize $name]
 
     if {[catch [list glob -tails -directory $name *] files]} {
@@ -1111,7 +1110,6 @@ proc OpenDirectory {name} {
     .t mark set insert 1.0
     set position_stack {}
     Top
-    set current_font_size $directory_font_size
     ToggleFont fix
     set current_translation lf
     Unmodified
@@ -1167,8 +1165,7 @@ proc SaveFile {{name ""} {force 0}} {
     }
 
     set override_attempt 0
-    Flash green
-    set cname [CanonicalFilename $name]
+    set name [CanonicalFilename $name]
     set dir [file dirname $name]
 
     if {![file exists $dir]} {
@@ -1312,24 +1309,35 @@ proc Terminate {{force 0}} {
 }
 
 
-proc ResizeFont {val} {
-    global current_font_size current_font current_font_style
-    set current_font_size $val
-    .t configure -font [list $current_font $current_font_size $current_font_style]
+proc ResizeFont {{val ""}} {
+    global current_font fixed_font variable_font
+    lassign $current_font name size style
+
+    if {$val == ""} {set val $size}
+
+    set font [list $name $val $style]
+
+    if {$current_font == $fixed_font} {
+        set fixed_font $font
+    } else {
+        set variable_font $font
+    }
+
+    set current_font $font
+    .t configure -font $font
     RunHook configuration_hook
 }
 
 
 proc ConfigureWindow {{runhook 1}} {
     global current_background current_foreground current_font 
-    global current_variable_font current_font_size current_font_style
     global tag_foreground tag_background selection_foreground 
-    global selection_background tag_font_style sbar_width
+    global selection_background tag_font sbar_width
     global sbar_color sbar sbar_background b2sweep_foreground 
     global b2sweep_background 
     global b3sweep_foreground b3sweep_background pseudo_selection_foreground 
     global pseudo_selection_background 
-    global win_mode tag_font_size 
+    global win_mode
     global inactive_selection_background 
     global has_focus focus_color nonfocus_color
 
@@ -1344,20 +1352,19 @@ proc ConfigureWindow {{runhook 1}} {
     .tag configure -background $tag_background -foreground $tag_foreground \
 	-selectbackground $selection_background -selectforeground $selection_foreground \
 	-inactiveselectbackground $inactive_selection_background \
-	-insertbackground $tag_foreground -font [list $current_variable_font $tag_font_size $tag_font_style] \
-        -insertofftime 0 -relief ridge -highlightthickness 0 -wrap char \
-        -borderwidth 1 -cursor arrow
+	-insertbackground $tag_foreground -font $tag_font \
+        -insertofftime 0 -relief solid -highlightthickness 0 -wrap char \
+        -borderwidth 1 -cursor left_ptr 
 
     .t configure -background $current_background -foreground $current_foreground  \
 	-selectbackground $selection_background -selectforeground $selection_foreground \
 	-inactiveselectbackground $inactive_selection_background \
-	-insertbackground $current_foreground -font \
-         [list $current_font $current_font_size $current_font_style] \
-        -relief ridge -borderwidth 1 -highlightthickness 0 \
-        -insertofftime 0 -insertwidth 3 -wrap char -cursor arrow
-    .s configure -background $sbar_background -relief ridge -borderwidth 1 \
-        -highlightthickness 0 -width $sbar_width
-    .s itemconfigure $sbar -fill $sbar_color -width 0 -stipple ""
+	-insertbackground $current_foreground -font $current_font \
+        -relief flat -borderwidth 1 -highlightthickness 0 \
+        -insertofftime 0 -insertwidth 3 -wrap char -cursor left_ptr
+    .s configure -background $sbar_color -relief solid -borderwidth 1 \
+        -highlightthickness 0 -width $sbar_width 
+    .s itemconfigure $sbar -fill $sbar_background -width 0 -stipple ""
     .t tag configure pseudosel -foreground $pseudo_selection_foreground -background $pseudo_selection_background
     .tag tag configure pseudosel -foreground $pseudo_selection_foreground -background $pseudo_selection_background
     .t tag configure b2sweep -foreground $b2sweep_foreground -background $b2sweep_background
@@ -1510,15 +1517,15 @@ proc Plumb {str args} {
 
     foreach r $plumbing_rules {
         set command_arguments [regexp -inline -- [lindex $r 0] $str]
-
+    
         if {$command_arguments != ""} {
             set r [eval [lindex $r 1]]
-    
+        
             if {$r != 0} {return 1}
         }
     }
 
-    if {[catch [list exec sh -c "${exec_prefix}$plumber \"$str\" $args"] result]} {
+    if {[catch [list exec sh -c "${exec_prefix}$plumber \"$str\" $args"]]} {
         return 0
     }
 
@@ -2014,7 +2021,7 @@ proc DoExecute {cmd {ctxt ""}} {
 
     if {$cmd1 == ""} return
 
-    InvokeExternalCommandInWindow $cmd1
+   InvokeExternalCommandInWindow $cmd1
     AddToHistory $cmd
 }
 
@@ -2044,13 +2051,36 @@ proc Scrolling {start end} {
 }
 
 
-proc ScrollUp {p} {
+proc ScrollUp {p {cont 0}} {
+    global scroll_repeat scroll_task
     .t yview scroll [expr -$p] pixels
+
+    if {$cont} {
+        if {$scroll_task != ""} {after cancel $scroll_task}
+
+        set p [expr [winfo pointery .s] - [winfo rooty .s]]
+        set scroll_task [after $scroll_repeat [list ScrollUp $p 1]]
+    }
 }
 
 
-proc ScrollDown {p} {
+proc EndScrolling {} {
+    global scroll_task
+    after cancel $scroll_task
+    set scroll_task ""
+}
+
+
+proc ScrollDown {p {cont 0}} {
+    global scroll_repeat scroll_task
     .t yview scroll $p pixels
+
+    if {$cont} {
+        if {$scroll_task != ""} {after cancel $scroll_task}
+
+        set p [expr [winfo pointery .s] - [winfo rooty .s]]
+        set scroll_task [after $scroll_repeat [list ScrollDown $p 1]]
+    }
 }
 
 
@@ -2612,13 +2642,15 @@ wm protocol . WM_DELETE_WINDOW Terminate
 DefineKey <KeyPress> {TakeFocus; set cut_unmodified ""}
 
 DefineKey <Control-plus> { 
-    global current_font_size
-    ResizeFont [expr $current_font_size + 1]
+    global current_font
+    lassign $current_font _ size
+    ResizeFont [expr $size + 1]
 }
 
 DefineKey <Control-minus> { 
-    global current_font_size
-    ResizeFont [expr $current_font_size - 1]
+    global current_font
+    lassign $current_font _ size
+    ResizeFont [expr $size - 1]
 }
 
 DefineKey <Control-c> { tk_textCopy [GetFocusWidget]; break }
@@ -2626,6 +2658,7 @@ DefineKey <Control-x> { tk_textCut [GetFocusWidget]; break }
 DefineKey <Control-v> { PasteSelection [GetFocusWidget]; break }
 DefineKey <Delete> { KillExecuting SIGINT; break }
 DefineKey <Control-f> { FilenameCompletion; break }
+DefineKey <Insert> { FilenameCompletion; break }
 
 DefineKey <Return> {
     TakeFocus
@@ -2771,6 +2804,7 @@ DefineKey <Escape> {
 # mouse events
 
 DefineKey <Double-ButtonPress-1> {
+    set b1_down 1
     set fw [GetFocusWidget]
     TakeFocus
 
@@ -2922,12 +2956,14 @@ DefineKey <ButtonRelease-3> {
     break
 }
 
-bind .s <1> { ScrollUp %y }
+bind .s <ButtonPress-1> { ScrollUp %y 1 }
+bind .s <ButtonRelease-1> EndScrolling
 bind .s <ButtonPress-2> { set b2_down 1; ScrollTo %y }
 bind .s <ButtonRelease-2> { set b2_down 0 }
 bind .s <Shift-ButtonPress-3> { set b2_down 1; ScrollTo %y }
 bind .s <Shift-ButtonRelease-3> { set b2_down 0 }
-bind .s <3> { ScrollDown %y }
+bind .s <ButtonPress-3> { ScrollDown %y 1 }
+bind .s <ButtonRelease-3> EndScrolling
 
 bind .s <Motion> {
     if {$b2_down} {
@@ -3021,58 +3057,13 @@ for {set i 0} {$i < $argc} {incr i} {
             incr i
             cd [lindex $argv $i]
         }
-        "-who" {puts [tk appname]}
         "-eval" { 
             incr i
             eval [lindex $argv $i]
         }
-        "-background" { 
-            incr i
-            set current_background [lindex $argv $i]
-        }
-        "-foreground" { 
-            incr i
-            set current_foreground [lindex $argv $i]
-        }
-        "-fixedfontname" { 
-            incr i
-            set current_fixed_font [lindex $argv $i]
-        }
-        "-variablefontname" { 
-            incr i
-            set current_variable_font [lindex $argv $i]
-        }
-        "-font" {
-            incr i
-            
-            switch [lindex $argv $i] {
-                fixed { set current_font $current_fixed_font }
-                variable { set current_font $current_variable_font }
-                default {
-                    puts stderr "invalid font"
-                    exit 1
-                }
-            }        
-        }
-        "-fontsize" { 
-            incr i
-            set current_font_size [lindex $argv $i]
-        }
-        "-fontstyle" { 
-            incr i
-            set current_font_style [lindex $argv $i]
-        }
         "-execute" {
             incr i
             source [lindex $argv $i]
-        }
-        "-file-encoding" {
-            incr i
-            set file_encoding [lindex $argv $i]
-        }
-        "-file-translation" {
-            incr i
-            set file_translation [lindex $argv $i]
         }
         "-post-eval" {
             incr i

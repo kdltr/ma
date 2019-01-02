@@ -5,12 +5,14 @@
 
 #include <stdio.h>
 #include <errno.h>
-#ifdef __APPLE__
+#ifdef __linux__
+# include <pty.h>
+#else
 # include <util.h>
+#endif
+#ifdef __APPLE__
 # include <mach/mach.h>
 # include <mach/mach_time.h>
-#else
-# include <pty.h>
 #endif
 #include <stdlib.h>
 #include <unistd.h>
