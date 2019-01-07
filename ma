@@ -2760,7 +2760,7 @@ DefineKey <Control-KeyPress-3> {
 }
 
 DefineKey <KeyRelease> {
-    if {[string first "%A" ")\]\}"] != -1} {
+    if {[lsearch {parenright bracketright braceright} "%K"] != -1} {
         set fw [GetFocusWidget]
         set result [MatchDelimitedBackwards [$fw index insert] $fw]
         eval FlashParenRange $fw $result
