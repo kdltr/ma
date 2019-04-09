@@ -1,3 +1,10 @@
+set fixed_font { "Roboto Mono Medium" 10 normal }
+set variable_font { "Roboto Medium" 11 normal }
+set current_font $variable_font
+set tag_font $variable_font
+set tag_clean_font $tag_font
+set tag_dirty_font { "Roboto Medium" 11 bold }
+
 ## File hooks
 
 source /my/library/code/ma/utils/hooks.tcl
@@ -7,7 +14,7 @@ proc SchemeFileHook {} {
     SchemeIndent
     ToggleFont fix
 }
-AddFileHook {\.(sc.?|meta)$} SchemeFileHook
+AddFileHook {\.(sc.?|meta|k|l)$} SchemeFileHook
 AddFileHook {\.(setup|egg)$} {SchemeFileHook; .tag insert "1.0 lineend" " chicken-install"}
 
 ## Color schemes
