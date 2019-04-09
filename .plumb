@@ -10,16 +10,16 @@ set browser firefox
 set image_viewer sxiv
 set pdf_viewer mupdf
 
-# manual pages "page(section)"
-# Plumb {^(.+)\((.e+)\)$} {
-#     set manpage [GetArg 1].[GetArg 2]
-#     Run man $manpage | ma -stdin
-# }
+Plumb {^<mail:(.+)>$} {
+    Run Mail [GetArg 1]
+    return 1
+}
 
 # scheme documentation "(path to manual page)"
 Plumb {^\((.+)\)$} {
     set page [split [GetArg 1]]
-    exec chicken-doc {*}$page 2>&1 | ma -stdin
+    exec chicken-doc {*}$page 2>&1 | ma-eval &
+    return 1
 }
 
 # image files
