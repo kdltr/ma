@@ -19,12 +19,10 @@ if {[info exists env(TMPDIR)]} {
 
 set async ""
 
-
 proc Usage {{code 1}} {
     puts stderr {usage: ma-eval [-h] [-async] [ID] [EXP ...]}
     exit $code
 }
-
 
 set exp [lassign $argv id]
 

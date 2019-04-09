@@ -8,7 +8,6 @@ fconfigure stderr -translation lf
 
 set plumbfile "~/.plumb"
 set plumbing_rules {}
-set executing_rules {}
 set ws [pwd]
 set attrs [dict create]
 set info 0
@@ -23,12 +22,6 @@ proc Usage {{code 1}} {
 proc Plumb {pat code} {
     global plumbing_rules
     lappend plumbing_rules [list $pat $code]
-}
-
-
-proc Execute {pat code} {
-    global executing_rules
-    lappend executing_rules [list $pat $code]
 }
 
 
@@ -116,10 +109,6 @@ close stdout
 set str [string trim [join $str]]
 set mode [GetAttr mode plumb]
 set rules $plumbing_rules
-
-if {$mode == "exec"} {
-    set rules $executing_rules
-}
 
 foreach r $rules {
    set command_arguments [regexp -inline -- [lindex $r 0] $str]

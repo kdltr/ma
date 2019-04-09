@@ -8,25 +8,27 @@
      
 "ma" is a minimalistic clone of the acme[1] editor used in Plan 9,
 and is written in Tcl/Tk. It has been tested with Tcl/Tk 8.5, mostly
-under Linux. "ma" has successfully been run on Mac OS X with XQuartz,
-but needs a tiling window manager to be used in a satisfactory way.
+under Linux and OpenBSD. "ma" has successfully been run on Mac OS
+X with XQuartz, but needs a tiling window manager to be used in a
+satisfactory way.
 
-I used emacs[2] for years, but got bored with the ever growing number
-of extensions and key-combinations that one accumulates when intensively
-using that editor. I also got fed up with the fact that purely keyboard
-driven interfaces involve frantic typing, something that appears to stress
-me. Acme, which is heavily mouse-controlled, seems to produce a more
-relaxed, single-handed use, especially for navigation and browsing. I'm
-slower now (or at least this is my impression), but less hectic while
-working (it seems).
+I used emacs[2] for years, but got bored with the ever growing
+number of extensions and key-combinations that one has to remember
+when intensively using that editor. I also got fed up with the fact
+that purely keyboard driven interfaces involve frantic typing,
+something that appears to stress me. Acme, which is heavily
+mouse-controlled, seems to produce a more relaxed, single-handed
+use, especially for navigation and browsing. I'm slower now (or at
+least this is my impression), but less hectic while working (it
+seems).
 
 Another advantage of acme is the dynamic nature of extending the
-user-interface while one is using it - nearly everything is text, and
-nearly every text can be mouse-sensitive.
+user-interface while one is using it - nearly everything is text,
+and every text can be mouse-sensitive.
 
-Note that this editor is single-window based - it doesn't provide multiple
-windows, nor does it manage them in any way (this is delegated to the
-window manager.)
+Note that this editor is single-window based - it doesn't provide
+multiple windows, nor does it manage them in any way (this is
+delegated to the window manager.)
 
 
 Installation:
@@ -41,36 +43,37 @@ PATH and ".plumb" into your $HOME.
 
 Usage:
 
-"ma" attempts to work as much as possible like Acme, but does no
+"ma" attempts to work as much as possible like acme, but does no
 own window-management.  Configuration is done in the file "~/.ma",
-holding Tcl code to modify fonts, colors, etc.  A number of command-line
-options can be provided to set various of these options and to run "ma"
-in special modes, or comunicate with the "registry", a "ma" instance
-that allows locating files that are already open.
-
+holding Tcl code to modify fonts, colors, etc.  A number of
+command-line options can be provided to set various of these options
+and to run "ma" in special modes, or to communicate with the
+"registry", a "ma" instance that allows locating files that are
+already open.
 
 To start the registry, run
 
   ma -registry &
 
-The registry is implemented using the Tk "send" command, so X-forwarding
-must be disabled (enter "xhost" to see wether this is the case). "ma"
-should still run, but features related to the registry will not be
-available in this case (locating already open windows, and "Putall".)
+The registry is implemented using the Tk "send" command, so
+X-forwarding must be disabled (enter "xhost" to see wether this is
+the case). "ma" should still run, but features related to the
+registry will not be available in this case (locating already open
+windows, and "Putall".)
 
-The "B" program takes one ore more filenames (optionally followed by
-an address) and opens the given files or activates already open windows
-holding these files.
+The "B" program takes one ore more filenames (optionally followed
+by an address) and opens the given files or activates already open
+windows holding these files.
 
-"pty" is a generic program running a subprocess in a pseudo terminal and
-is used by "win" to have interactive windows inside a "ma" instance. Note
-that this is currently very crude and does not support escape codes of
-any kind.
+"pty" is a generic program running a subprocess in a pseudo terminal
+and is used by "win" to have interactive windows inside a "ma"
+instance. Note that this is currently very crude and does not support
+escape codes of any kind.
 
 "ma-eval" can be used to evaluate Tcl code in a running "ma" instance,
-"awd" sets the label of the window in which the command is executed. You
-can create an alias for "cd" to set the label automatically when used
-inside an interactive shell window:
+"awd" sets the label of the window in which the command is executed.
+You can create an alias for "cd" to set the label automatically
+when used inside an interactive shell window:
 
 alias cd="_cd"
 
@@ -81,22 +84,23 @@ function _cd () {
     fi
 }
 
-When the registry is running, the window that has the current focus is
-drawn with a white border around it. Executing commands in the body of
-another window will then perform the execution in the context of the
-focus window. Execution in the tag of a window always has that window
-as context, regardless of focus.
+When the registry is running, the window that has the current focus
+is drawn with a white border around it. Executing commands in the
+body of another window will then perform the execution in the context
+of the focus window. Execution in the tag of a window always has
+that window as context, regardless of focus.
 
-When you create a new, unnamed window and want to save it, then just
-edit the filename (initially "<unnamed>"). Also saving the file under a
-different name can be done the same way.
+When you create a new, unnamed window and want to save it, then
+just edit the filename (initially "<unnamed>"). Also saving the
+file under a different name can be done the same way.
 
-The "plumb" program performs a very simple Plan-9 like "plumbing" based
-on regular expressions, see ".plumb" for some examples on how to define
-rules, which consists of Tcl code associated to regular expressions.
-"plumb" takes a string as argument and runs the plumbing rules
-in "~/.plumb" until a rule matches and succeeds. Text sweeped or
-clicked with B3 will invoke "plumb" with the string as argument.
+The "plumb" program performs a very simple Plan-9 like "plumbing"
+based on regular expressions, see ".plumb" for some examples on how
+to define rules, which consists of Tcl code associated to regular
+expressions.  "plumb" takes a string as argument and runs the
+plumbing rules in "~/.plumb" until a rule matches and succeeds.
+Text sweeped or clicked with B3 will invoke "plumb" with the string
+as argument.
 
 
 Environment variables:
@@ -164,14 +168,13 @@ Extending:
 
 The easiest way to add commands is simply to put scripts or programs
 in your PATH. If you want more thorough integration, you can also
-define commands at the Tcl level, by using "DefineCommand REGEX EXPR" 
-to define Tcl code to be executed when the command given in REGEX is 
-executed, i.e.
+define commands at the Tcl level, by using "DefineCommand REGEX
+EXPR" to define Tcl code to be executed when the command given in
+REGEX is executed, i.e.
 
     DefineCommand {^MyCommand\s+(.+)$} { ... }
 
 Arguments (subpatterns in the regex) can be extracted with "GetArg".
-
 
 "ma" is not finished, and probably never will. For more information,
 consult the source code or contact me[3].
@@ -180,121 +183,136 @@ consult the source code or contact me[3].
 To do:
 
 - (bug) crash of program in win-mode doesn't print any message
-- (bug) KeyRelease-event in .tag (getting through after invoking dmenu(1) 
-  in this case) results in incorrect resize of tag, even though only 
-  first line contains text
+- (bug) KeyRelease-event in .tag (getting through after invoking 
+  dmenu(1) in this case) results in incorrect resize of tag, even 
+  though only first line contains text
 - (bug) Automatic resizing of the tag doesn't always work
-- (bug) sort order in columnar listing is wrong (should be rowwise, not 
-  columnwise)
-- (bug) Tk seems to clear the clipboard when exiting, so the contents 
-  copied from a terminated instance are not recovered
-- (bug) the (pseudo-)selection is sometimes retained even after input
-- (bug) "Back" should not put position on search-stack if search wraps
-   around
+- (bug) sort order in columnar listing is wrong (should be rowwise,
+  not columnwise)
+- (bug) Tk seems to clear the clipboard when exiting, so the 
+  contents copied from a terminated instance are not recovered
+- (bug) the (pseudo-)selection is sometimes retained even after 
+  input
+- (bug) "Back" should not put position on search-stack if search 
+  wraps around
+- (bug) The exit status of subprocesses in non-win mode is silently
+  discarded. This seems to be a Tcl limitation, see also:
+  https://core.tcl.tk/tips/doc/trunk/tip/462.md
 
 Shortcomings:
 
 - the file-registry needs to be explicitly started
-- the "Kill" command (Del key) is too coarse and kills all subprocesses
-- width use for computing columnar layout seems not to be correct 
-  (always 80?)
+- the "Kill" command (Del key) is not very reliable with respect to
+  what processes are killed (should probably use a process group)
+- the width used for computing columnar directory layout seems not 
+  to be correct (always 80?)
 - autosnarf when selecting: no idea how to do this, keeping current 
-  selection and copying when selection gets empty doesn't work, since 
-  selection by mouse apparently clears it in between movements
-  - perhaps detect when selection changes from non-empty to empty
+  selection and copying when selection gets empty doesn't work, 
+  since selection by mouse apparently clears it in between 
+  movements; perhaps detect when selection changes from non-empty 
+  to empty
 - there is no "Zerox" command
 - works very bad on Mac/Aqua and Windows:
   - Mac: default Tcl/Tk crashes, freshly installed (Aqua) aborts 
-    unexpectedly, B2/B3 are swapped, slow startup (Mac/X11 works 
-    surprisingly well, though)
-  - Windows: cursor in text widget barely visible (black, even on dark 
-    background), startup very slow, binding Ctrl-keys doesn't seem to 
-    work, UpdateTag doesn't seem to treat filename as valid and inserts 
-    Win-style path before it (this is with Active State Tcl/Tk, 8.6.4)
+    unexpectedly, B2/B3 are swapped, slow startup (note that 
+    Tcl/Tk for XQuartz works surprisingly well, though)
+  - Windows: cursor in text widget barely visible (black, even on 
+    dark background), startup very slow, binding Ctrl-keys doesn't 
+    seem to work, UpdateTag doesn't seem to treat filename as valid
+    and inserts Win-style path before it (this is with Active 
+    State Tcl/Tk, 8.6.4)
 - there is no backup-file
-- B2 in .sbar should respect current offset from mouse-pointer to top
-  of bar (currently scrolls so that top of bar is reference-point)
-- The move-box of a window is faked with a special unicode char
-- Address syntax only supports a subset of acme/sam and is rather crude 
-  (see also comment in ParseAddr), "/.../"/"?...?" addresses only select 
-  a position, not ranges
-- In "win" mode, MA tries to remove the prompt from input lines, but 
-  moving the insertion point may confuse this, if possible use a prompt 
-  for interactively used programs that will be ignored (e.g. ":;" for sh)
-- Password-entry in "win" mode works only when the insertion cursor is 
-  not moved by mouse or cursor-movement keys
-- "Putall" is implemented, but will save all files in all open windows, 
-  even on virtual screens not currently visible
+- Address syntax only supports a subset of acme/sam and is rather 
+  crude (see also comment in ParseAddr), "/.../"/"?...?" addresses
+  only select a position, not ranges
+- In "win" mode, "ma" tries to ignore the prompt from input lines, 
+  but moving the insertion point may confuse this, if possible use 
+  a prompt for interactively used programs that will be ignored 
+  by the client program (e.g. ":;" for sh(1) or ";" for rc(1))
+- Password-entry in "win" mode works only when the insertion cursor
+  is not moved by mouse or cursor-movement keys
+- "Putall" is implemented, but will save all files in all open 
+  windows, even on virtual screens not currently visible
 - there is no "Edit" command
 
-Differences to acme(1):
+Differences to the Plan 9 acme:
 
+- There is no "move" box
 - Tab does not insert "\t" but whitespace
 - (obviously) single-window mode
-- no dynamic update of undo/redo commands tag (except filename)
+- no dynamic update of undo/redo commands tag (Tcl/Tk 8.6 seems 
+  to support access to the undo-stack, though)
 - auto-chmod when saving file beginning with "#!/"
 - missing commands: "Zerox", "Edit", "Incl"
-- supports Up/Down movement by line
+- supports Key-Up/Down movement by line
 - inserting with active selection doesn't snarf
 - indentation-setting is window-local
-- executing with redirection in "win" mode invokes shell, and does not 
-  send the command to the process running in the window
-- executing in tag always has current window as context, executing in body 
-  has currently focussed window as context (if registry is running)
-- double-clicking opening bracket selects forward, but quote-scanning
-  works backwards (in acme both bracket and quotes only select backwards)
+- executing with redirection ("|...", ">...", "<...") in "win" 
+  mode invokes shell, and does not send the command to the process 
+  running in the window
+- executing in tag always has current window as context, executing
+  in body has currently focussed window as context (if registry is 
+  running)
+- double-clicking opening bracket selects forward, but quote-
+  scanning works backwards (in acme both bracket and quotes only 
+  select backwards)
 - indent-mode works differently
-- word under cursor is defined as ws-delimited (excluding parentheses)
-- win-mode: pressing RETURN before current insert point sends the whole 
-  line
-- "noscroll" mode is much weaker and only available in "+Errors" + "win" 
-  windows
+- word under cursor is defined as ws-delimited (excluding 
+  parentheses)
+- win-mode: pressing RETURN before current insert point sends the 
+  whole line
+- "noscroll" mode is much weaker (does not block running process)
 - basic keyboard commands for mouse-less operation: 
-  C-1 (toggle focus), C-2 (execute selection), C-3 (acquire selection)
+  C-1 (toggle focus), C-2 (execute selection), C-3 (acquire 
+  selection)
 - B3-search is case-insensitive, search with "Look" is not
-- "//.../" address disables most regex syntax (used for ctags)
-- Various emacsish keyboad sequences, as provided by the Tk text widget
+- "//.../" address means search with regex syntax disabled
+- Supports various emacsish keyboard sequences, as provided by the 
+  Tk text widget
 - Additional commands: 
     Anchor: add address of insertion point into tag
     Withdraw: hide window
     Tcl CODE: execute Tcl code
     Crnl: toggle between UNIX/DOS line-terminator encoding
     Back: jump back to previous address after search
-    Interrupt: send ^C to interactive subprocess
-- MA supports paren-matching
+    Interrupt: send ^C to interactive subprocess (win mode)
+- MA highlights matching parens/brackets/braces
 - Shift-B3 is equivalent to B2
-- Acquiring an existing window doesn't warp mouse to current selection
-- The "Local" command toggles a state whether directories are opened
-  in the current window or a new one
+- Acquiring (B3) an existing window doesn't warp mouse to current 
+  selection
+- The "Local" command toggles a state whether directories are 
+  opened in the current window or in a new one
+- "Abort" terminates, like "Del", but with an exit status of 1
+- "Wrap" toggles between word-wrapping and char-wrapping.
 
 Idioms:
 
 * Remember that you have filename completion (^F) everywhere
-* Select command in tag and B2 to use it like a custom button
+* Select command in tag and B2 to use it like a custom button, this
+  is especially useful in win-mode, by adding often repeated 
+  commands in the tag
 * In interactive programs running in a "win" window, any command or
   line of commands can be B2-clicked to insert it when input is 
   requested, this also works for B2B1 chords.
-* Avoid the console, a temporary guide file with commands reduces typing
-* Use "h", "g" and "gg", also "B"
+* Avoid the console, a temporary guide file with commands reduces 
+  typing
 * Select and B2 "<cat FILENAME" to insert into current position
 * use "env ... COMMAND" to override env-vars when using B3
 * Command/work files can be used for other contexts 
   - just ensure the target window is activated
-* In win mode, use "Send" in the tag to have commands ready
-  - e.g. "Send si" in gdb
 * Double-click words to quickly select them and avoid sweeping
 * Quote or parenthesize commands that contain whitespace
 * Addresses like "FILENAME:/.../" or "FILENAME:LINE" can be used 
   as simple hyperlinks
-* B3 tag to select all text
+* B3 label in tag to select all text
 * The tag can also be B2'd to execute a script you're working on
-  - MA automatically saves as executable, if a she-bang line exists
+  (MA automatically saves as executable, if a she-bang line exists)
 * You can write directly into directory windows and sweep (or B2B1)
-  to execute commands on files, use Get to refresh
-* You can also simply enter and B2 commands into an +Errors window
+  to execute commands on files, use "Get" command to refresh
+* You can also simply enter and B2 commands into an "+Errors" window
 * Double-B1 after end of line selects whole line for execution
-* Use unique marker to separate sections in guide files to quickly jump
-  around
+* Use unique marker to separate sections in guide files to quickly 
+  jump around through use of B3
 
 All of MA's source code is hereby placed in the public domain
 
@@ -303,14 +321,29 @@ Acknowledgements:
     Thanks to:
 
         Lucas Sköldqvist for various tips and suggestions.
-        Kooda for fixing the completely broken implementation of pty.c
+        Kooda for fixing the completely broken implementation of 
+        pty.c, also fixed a problem with paren-matching in Tk 8.6.
         "mujo" for adding several improvements and corrections.
 
 Version history:
 
 11
-
-
+    - Esc selects newly typed text since last mouse button release
+      (not press).
+    - Increased scroll amount for Prior/Next keys.
+    - Added "-fixed" command line option.
+    - After tag-relayout, sensure insertion point in body remains
+      visible.
+    - The "pty" program passed the exit-status through to the
+      caller.
+    - When parsing a command line, the command may be enclosed in
+      single or double quotes.
+    - Use %K for detecting closing paren/bracket/brace instead of
+      %A (thanks to Kooda).
+    - Added "Abort" command.
+    - B2 on scroll bar takes center of "thumb" as reference point.
+    - Added "Wrap" command.
+    - Fixed bug in Broadcast procedure (used in "Putall")
 
 10
     - Saving into a nonexistent directory failed with an error instead of creating
