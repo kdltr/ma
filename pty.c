@@ -22,9 +22,10 @@
 #include <termios.h>
 #include <time.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 
-static int sigint = 0;
+static volatile int sigint = 0;
 
 
 static void usage(int code)
@@ -37,6 +38,24 @@ static void usage(int code)
 static void sighandler(int sig)
 {
     sigint = 1;
+}
+
+
+static int exit_status(pid_t pid)
+{
+    int status;
+    pid_t p = waitpid(pid, &status, 0);
+
+    if(p == -1) perror("waitpid");
+
+    if(p == 0) return 0;
+
+    if(WIFEXITED(status)) 
+        return WEXITSTATUS(status); 
+    else if(WIFSIGNALED(status))
+        return WTERMSIG(status);
+
+    return 1;
 }
 
 
@@ -110,7 +129,7 @@ int main(int argc, char* argv[])
          || (pfd [ 0 ].revents & POLLHUP) != 0
          || (pfd [ 1 ].revents & POLLHUP) != 0) {
         close(fd);
-        return 0;
+        return exit_status(pid);
       }
 
       if((pfd[ 0 ].revents & POLLIN) != 0) {
@@ -122,7 +141,7 @@ int main(int argc, char* argv[])
         } 
         else if(n == 0) {
           close(fd);
-          return 0;
+          return exit_status(pid);
         }
 
         if(write(fd, buf, n) == -1) {
@@ -137,8 +156,8 @@ int main(int argc, char* argv[])
         if(n == -1) {
           switch(errno) {
           case EIO:
-            // usually process finished
-            return 0;
+            /* usually process finished */
+            return exit_status(pid);
 
           default:
             perror("read from subprocess");
@@ -147,7 +166,7 @@ int main(int argc, char* argv[])
         } 
         else if(n == 0) {
           close(fd);
-          return 0;
+          return exit_status(pid);
         } 
         else {
           if(write(STDOUT_FILENO, buf, n) == -1) {
