@@ -10,6 +10,22 @@ set browser firefox
 set image_viewer sxiv
 set pdf_viewer mupdf
 
+Plumb {^.*\.zip$} {
+    if {[file exists [GetArg 0]]} {
+        RunOutput unzip -l [GetArg 0]
+        return 1
+    }
+    return 0
+}
+
+Plumb {^.*\.tar\..*$} {
+    if {[file exists [GetArg 0]]} {
+        RunOutput tar tf [GetArg 0]
+        return 1
+    }
+    return 0
+}
+
 Plumb {^#([[:digit:]]+)} {
     exec plumb "https://bugs.call-cc.org/ticket/[GetArg 1]"
     return 1
