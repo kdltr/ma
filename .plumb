@@ -10,6 +10,11 @@ set browser firefox
 set image_viewer sxiv
 set pdf_viewer mupdf
 
+Plumb {^#([[:digit:]]+)} {
+    exec plumb "https://bugs.call-cc.org/ticket/[GetArg 1]"
+    return 1
+}
+
 Plumb {^<mail:(.+)>$} {
     Run Mail [GetArg 1]
     return 1
@@ -18,7 +23,7 @@ Plumb {^<mail:(.+)>$} {
 # scheme documentation "(path to manual page)"
 Plumb {^\((.+)\)$} {
     set page [split [GetArg 1]]
-    exec chicken-doc {*}$page 2>&1 | ma-eval &
+    RunOutput chicken-doc $page
     return 1
 }
 
@@ -90,7 +95,7 @@ Plumb {^<([^>]+)>$} {return [GotoIncludeFile [GetArg]]}
 
 # <manpage>(<n>)
 Plumb {^(\S+)\((\d+)\)$} {
-    exec man [GetArg 2] [GetArg 1] | ma-eval &
+    RunOutput man [GetArg 2] [GetArg 1]
     return 1
 }
 
