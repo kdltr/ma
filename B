@@ -15,9 +15,17 @@ if {$argc == 0} {
 }
 
 foreach x $argv {
-    if {[regexp {^([^:]+):(.+)$} $x _ fname addr]} {
-        set fname [file normalize $fname]
-        exec ${exec_prefix}ma-eval -async MA-registry FindFile "{$fname}" $addr &
+    if {[regexp {^(.*):([^:]*)$} $x whole file addr]} {
+        set fname [file normalize $whole]
+        if {[file exists $fname]} {
+            exec ${exec_prefix}ma-eval -async MA-registry FindFile "{$fname}" &
+            continue
+        }
+        set fname [file normalize $file]
+        if {[file exists $fname]} {
+            exec ${exec_prefix}ma-eval -async MA-registry FindFile "{$fname}" $addr &
+            continue
+        }
     } else {
         set fname [file normalize $x]
         exec ${exec_prefix}ma-eval -async MA-registry FindFile "{$fname}" &
