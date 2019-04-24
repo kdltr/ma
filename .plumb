@@ -9,7 +9,9 @@
 set browser firefox
 set image_viewer sxiv
 set pdf_viewer mupdf
+set media_player mpv
 
+# ZIP archives
 Plumb {^.*\.zip$} {
     if {[file exists [GetArg 0]]} {
         RunOutput unzip -l [GetArg 0]
@@ -18,6 +20,7 @@ Plumb {^.*\.zip$} {
     return 0
 }
 
+# TAR archives
 Plumb {^.*\.tar\..*$} {
     if {[file exists [GetArg 0]]} {
         RunOutput tar tf [GetArg 0]
@@ -26,11 +29,13 @@ Plumb {^.*\.tar\..*$} {
     return 0
 }
 
+# CHICKEN tickets
 Plumb {^#([[:digit:]]+)} {
     exec plumb "https://bugs.call-cc.org/ticket/[GetArg 1]"
     return 1
 }
 
+# Emails
 Plumb {^<mail:(.+)>$} {
     Run Mail [GetArg 1]
     return 1
@@ -63,6 +68,13 @@ Plumb {^(.+).pdf$} {
         return 1
     }
     return 0
+}
+
+# Youtube URLs
+Plumb {^https://www.youtube\.com/.*$} {
+    global media_player
+    Run $media_player [GetArg 0]
+    return 1
 }
 
 # <URL>
