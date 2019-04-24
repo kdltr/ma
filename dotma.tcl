@@ -1,9 +1,9 @@
-set fixed_font { "Roboto Mono Medium" 10 normal }
-set variable_font { "Roboto Medium" 11 normal }
+set fixed_font { "Roboto Mono Medium" 9 normal }
+set variable_font { "Roboto Medium" 10 normal }
 set current_font $variable_font
 set tag_font $variable_font
 set tag_clean_font $tag_font
-set tag_dirty_font { "Roboto Medium" 11 bold }
+set tag_dirty_font { "Roboto Medium" 10 italic }
 set rc_style_quoting 1
 
 ## File hooks
