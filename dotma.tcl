@@ -16,7 +16,7 @@ proc SchemeFileHook {} {
     ToggleFont fix
 }
 AddFileHook {\.(sc.?|meta|k|l)$} SchemeFileHook
-AddFileHook {\.(setup|egg)$} {SchemeFileHook; .tag insert "1.0 lineend" " chicken-install"}
+AddFileHook {\.(setup|egg)$} {SchemeFileHook}
 
 ## Color schemes
 
