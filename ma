@@ -2618,5 +2618,12 @@ if {$post_eval != ""} {
         eval $cmd
     }
 }
+
+if {[file exists ".tag"]} {
+    set fp [open ".tag" r]
+    .tag insert end "\n[read $fp]"
+    close $fp
+}
+
 set env(MA_LABEL) $current_filename
 TakeFocus
