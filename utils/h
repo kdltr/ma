@@ -18,7 +18,7 @@ case "$1" in
 esac
 
 if test -z "$1"; then
-    exec tail -n30 $MA_HISTORY | uniq
+    exec tail -n30 $MA_HISTORY | sort | uniq
 else
-    exec grep -a "$@" $MA_HISTORY | uniq | $keep
+    exec grep -a "$@" $MA_HISTORY | sort | uniq | $keep
 fi
